@@ -1,0 +1,7 @@
+datasets==1.18.3
+fire
+numpy
+pytorch-lightning==1.7.7
+torchvision==0.13.1
+torch==1.12.1
+tqdm
