@@ -1,12 +1,11 @@
-from typing import Dict
+from abc import abstractmethod
 
 from torch import nn
 
-from stact import StAct
-from stact.models.base import BaseConvolutionalNetwork
+from torchrush.model.base import BaseConvNet
 
 
-class LeNet(BaseConvolutionalNetwork):
+class LeNet(BaseConvNet):
     def _init(self, output_size: int = 10):
         self.layer1 = nn.Sequential(
                 nn.Conv2d(1, 6, kernel_size=5, stride=1, padding=0),
@@ -18,13 +17,10 @@ class LeNet(BaseConvolutionalNetwork):
                 nn.BatchNorm2d(16),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=2, stride=2))
-        self.fc = nn.Linear(256, 120)
-        self.relu = nn.ReLU()
-        self.fc1 = nn.Linear(120, 84)
-        self.relu1 = nn.ReLU()
-        self.fc2 = nn.Linear(84, output_size)
+        self.fc1 = nn.Sequential(nn.Linear(256, 120), nn.ReLU())
+        self.fc2 = nn.Linear(120, 84)
 
-    def forward(self, x):
+    def _forward(self, x):
         '''
         One forward pass through the network.
 
@@ -34,31 +30,23 @@ class LeNet(BaseConvolutionalNetwork):
         x = self.layer1(x)
         x = self.layer2(x)
         x = x.flatten(start_dim=1)
-        x = self.fc(x)
-        x = self.relu(x)
         x = self.fc1(x)
-        x = self.relu1(x)
         x = self.fc2(x)
         return x
 
+    @abstractmethod
+    def compute_loss(self, y_pred, y_true):
+        pass
 
-class StActLeNet(LeNet):
-    def _init(self, activation: Dict[str, float] = None, output_size: int = 10):
-        super()._init(output_size=output_size)
 
-        if activation is None:
-            activation = {"ReLU": 0.5, "Tanh": 0.5}
-        self.activation = activation
+class LeNetForClassification(LeNet):
+    def _init(self, output_size: int = 10):
+        self.out = nn.Sequential(nn.ReLU(), nn.Linear(84, output_size))
 
-        self.stact1 = StAct(256, 120, self.activation, mode="s2m")
-        self.stact2 = StAct(self.stact1, 84, self.activation, mode="m2m")
-        self.stact_output = StAct(self.stact2, output_size, self.activation, mode="m2s")
-
-    def forward(self, x):
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = x.flatten(start_dim=1)
-        x = self.stact1(x)
-        x = self.stact2(x)
-        x = self.stact_output(x)
+    def _forward(self, x):
+        x = super(LeNetForClassification, self)._forward(x)
+        x = self.out(x)
         return x
+
+    def compute_loss(self, y_pred, y_true):
+        return self.criterion(y_pred, y_true)

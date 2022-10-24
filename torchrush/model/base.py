@@ -73,6 +73,10 @@ class BaseModule(pl.LightningModule):
         )
 
     @abstractmethod
+    def compute_loss(self, y_pred, y_true):
+        pass
+
+    @abstractmethod
     def _forward(self, x):
         pass
 
@@ -81,10 +85,6 @@ class BaseModule(pl.LightningModule):
         x = self._forward(x)
         x = self.postprocess(x)
         return x
-
-    @abstractmethod
-    def compute_loss(self, y_pred, y_true):
-        pass
 
     def configure_optimizers(self):
         criterion_handle = self._creterion_handle
@@ -103,14 +103,12 @@ class BaseModule(pl.LightningModule):
     def training_step(self, batch, batch_index):
         x, y = batch
         model_out = self(x)
-        loss = self.compute_loss(model_out, y)
-        return loss
+        return self.compute_loss(model_out, y)
 
     def validation_step(self, batch, batch_index):
         x, y = batch
         model_out = self(x)
-        loss = self.compute_loss(model_out, y)
-        return loss
+        return self.compute_loss(model_out, y)
 
     def preprocess(self, x):
         return x
@@ -145,8 +143,8 @@ class BaseMLP(BaseModule):
         self.input_width = input_width
         self.input_height = input_height
         self.input_channel = channel_size
-        self.input_nodes = input_width * input_height * channel_size
-        self.input_size = (1, self.input_nodes)
+        self.input_shape = input_width * input_height * channel_size
+        self.input_size = (1, self.input_shape)
         self.output_size = output_size
         self._init(*args, **kwargs)
 
@@ -156,11 +154,6 @@ class BaseMLP(BaseModule):
 
     def preprocess(self, x):
         return x.view(x.size(0), -1)
-
-    def compute_loss(self, y_pred, y_true):
-        if y_true.ndim == 1:
-            y_true = F.one_hot(y_true, self.output_size) * 1.0
-        return self.criterion(y_pred, y_true)
 
 
 class BaseConvNet(BaseModule):
@@ -172,7 +165,7 @@ class BaseConvNet(BaseModule):
             *args,
             **kwargs
     ):
-        super(BaseConvNet, self).__init__(criterion, optimizer, *args, **kwargs)
+        super(BaseConvNet, self).__init__(criterion, optimizer, **kwargs)
         self.input_size = input_size
         if len(input_size) == 3:
             channel_size, input_width, input_height = input_size
@@ -188,7 +181,7 @@ class BaseConvNet(BaseModule):
         self.input_width = input_width
         self.input_height = input_height
         self.input_channel = channel_size
-        self.input_nodes = channel_size, input_width, input_height
+        self.input_shape = channel_size, input_width, input_height
         self._init(*args, **kwargs)
 
     @abstractmethod

@@ -2,8 +2,6 @@ import importlib
 import inspect
 from collections.abc import Iterable
 
-from torchrush.utils.io_utils import json_load
-
 
 def isiterable(obj):
     return isinstance(obj, Iterable)
