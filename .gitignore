@@ -140,3 +140,6 @@ dmypy.json
 
 # Neptune
 .neptune/
+
+# pt-lightning
+lightning_logs/

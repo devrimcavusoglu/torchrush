@@ -1,14 +1,17 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Tuple, Union, Dict, Any
+from typing import Any, Dict, Tuple, Union
 
 import pytorch_lightning as pl
-import torch.nn.functional as F
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
 
-from torchrush.utils.torch_utils import get_optimizer_by_name, get_criterion_by_name, get_optimizer_args, \
-    get_criterion_args
+from torchrush.utils.torch_utils import (
+    get_criterion_args,
+    get_criterion_by_name,
+    get_optimizer_args,
+    get_optimizer_by_name,
+)
 
 
 @dataclass
@@ -19,15 +22,17 @@ class ArgumentHandler:
 
 
 class BaseModule(pl.LightningModule):
-    def __init__(self,
-                 criterion: Union[str, TorchLoss],
-                 optimizer: Union[str, TorchOptimizer],
-                 **kwargs
-    ):
+    def __init__(self, criterion: Union[str, TorchLoss], optimizer: Union[str, TorchOptimizer], *args, **kwargs):
         super(BaseModule, self).__init__()
         self._criterion = None
         self._optimizer = None
-        self._creterion_handle, self._optimizer_handle = self.setup_components(criterion, optimizer, **kwargs)
+        self._criterion_handle, self._optimizer_handle = self.setup_components(criterion, optimizer, **kwargs)
+        kwargs = self._clean_kwargs(**kwargs)
+        self._init(*args, **kwargs)
+
+    @abstractmethod
+    def _init(self, *args, **kwargs):
+        pass
 
     @property
     def criterion(self):
@@ -37,11 +42,17 @@ class BaseModule(pl.LightningModule):
     def optimizer(self):
         return self._optimizer
 
+    def _clean_kwargs(self, **kwargs) -> Dict[str, Any]:
+        keys_removed = []
+        for k, v in kwargs.items():
+            if k in self._criterion_handle.arguments or k in self._optimizer_handle.arguments:
+                keys_removed.append(k)
+        for key in keys_removed:
+            kwargs.pop(key)
+        return kwargs
+
     def setup_components(
-            self,
-            criterion: Union[str, TorchLoss],
-            optimizer: Union[str, TorchOptimizer],
-            **kwargs
+        self, criterion: Union[str, TorchLoss], optimizer: Union[str, TorchOptimizer], **kwargs
     ) -> Tuple[ArgumentHandler, ArgumentHandler]:
         if isinstance(criterion, str):
             criterion_args = get_criterion_args(criterion, **kwargs)
@@ -49,8 +60,7 @@ class BaseModule(pl.LightningModule):
                 criterion_args = {}
             criterion_is_object = False
         elif not isinstance(criterion, TorchLoss):
-            raise ValueError(f"Expecting `str` or `torch.nn.modules._Loss` object, got "
-                             f"`{type(criterion)}`.")
+            raise ValueError(f"Expecting `str` or `torch.nn.modules._Loss` object, got " f"`{type(criterion)}`.")
         else:
             criterion_args = {}
             criterion_is_object = True
@@ -61,15 +71,14 @@ class BaseModule(pl.LightningModule):
                 optimizer_args = {}
             optimizer_is_object = False
         elif not isinstance(criterion, TorchOptimizer):
-            raise ValueError(f"Expecting `str` or `torch.optim.Optimizer` object, got "
-                             f"`{type(optimizer)}`.")
+            raise ValueError(f"Expecting `str` or `torch.optim.Optimizer` object, got " f"`{type(optimizer)}`.")
         else:
             optimizer_args = {}
             optimizer_is_object = True
 
         return (
             ArgumentHandler(name_or_object=criterion, arguments=criterion_args, is_object=criterion_is_object),
-            ArgumentHandler(name_or_object=optimizer, arguments=optimizer_args, is_object=optimizer_is_object)
+            ArgumentHandler(name_or_object=optimizer, arguments=optimizer_args, is_object=optimizer_is_object),
         )
 
     @abstractmethod
@@ -87,7 +96,7 @@ class BaseModule(pl.LightningModule):
         return x
 
     def configure_optimizers(self):
-        criterion_handle = self._creterion_handle
+        criterion_handle = self._criterion_handle
         optimizer_handle = self._optimizer_handle
         if criterion_handle.is_object:
             self._criterion = criterion_handle.name_or_object
@@ -115,76 +124,3 @@ class BaseModule(pl.LightningModule):
 
     def postprocess(self, x):
         return x
-
-
-class BaseMLP(BaseModule):
-    def __init__(
-            self,
-            input_size: Tuple,
-            output_size: int,
-            criterion: Union[str, TorchLoss],
-            optimizer: Union[str, TorchOptimizer],
-            *args,
-            **kwargs
-    ):
-        super(BaseMLP, self).__init__(criterion, optimizer, **kwargs)
-        self.user_input_size = input_size
-        if len(input_size) == 3:
-            channel_size, input_width, input_height = input_size
-        elif len(input_size) == 2:
-            input_width, input_height = input_size
-            channel_size = 1
-        elif len(input_size) == 1:
-            input_width, input_height = input_size, input_size
-            channel_size = 1
-        else:
-            raise ValueError("Unsupported input type")
-
-        self.input_width = input_width
-        self.input_height = input_height
-        self.input_channel = channel_size
-        self.input_shape = input_width * input_height * channel_size
-        self.input_size = (1, self.input_shape)
-        self.output_size = output_size
-        self._init(*args, **kwargs)
-
-    @abstractmethod
-    def _init(self, *args, **kwargs):
-        pass
-
-    def preprocess(self, x):
-        return x.view(x.size(0), -1)
-
-
-class BaseConvNet(BaseModule):
-    def __init__(
-            self,
-            input_size: Tuple,
-            criterion: Union[str, TorchLoss],
-            optimizer: Union[str, TorchOptimizer],
-            *args,
-            **kwargs
-    ):
-        super(BaseConvNet, self).__init__(criterion, optimizer, **kwargs)
-        self.input_size = input_size
-        if len(input_size) == 3:
-            channel_size, input_width, input_height = input_size
-        elif len(input_size) == 2:
-            input_width, input_height = input_size
-            channel_size = 1
-        elif len(input_size) == 1:
-            input_width, input_height = input_size, input_size
-            channel_size = 1
-        else:
-            raise ValueError("Unsupported input type")
-
-        self.input_width = input_width
-        self.input_height = input_height
-        self.input_channel = channel_size
-        self.input_shape = channel_size, input_width, input_height
-        self._init(*args, **kwargs)
-
-    @abstractmethod
-    def _init(self, *args, **kwargs):
-        pass
-

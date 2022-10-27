@@ -1,25 +1,17 @@
-from typing import Dict
+from abc import abstractmethod
 
 import torch
 from torch import nn
+from torch.nn import ModuleList
 
-from torchrush.model.base import BaseFeedForwardNetwork
+from torchrush.model.base import BaseModule
 
 
-class DeepFFN10(BaseFeedForwardNetwork):
-    def _init(self, activation: str = "ReLU", output_size: int = 10):
-        self.input = self.dense_block(
-            self.input_nodes, 128, activation
-        )
-        self.dense1 = self.dense_block(128, 128, activation)
-        self.dense2 = self.dense_block(128, 128, activation)
-        self.dense3 = self.dense_block(128, 128, activation)
-        self.dense4 = self.dense_block(128, 128, activation)
-        self.dense5 = self.dense_block(128, 128, activation)
-        self.dense6 = self.dense_block(128, 128, activation)
-        self.dense7 = self.dense_block(128, 128, activation)
-        self.dense8 = self.dense_block(128, 128, activation)
-        self.output = torch.nn.Linear(128, output_size)
+class DeepFFN10(BaseModule):
+    def _init(self, input_size: int, activation: str = "ReLU"):
+        self.input = self.dense_block(self.input_nodes, 128, activation)
+
+        self.dense_layers = ModuleList([self.dense_block(128, 128, activation) for _ in range(8)])
 
     @staticmethod
     def dense_block(in_features, out_features, f):
@@ -30,18 +22,29 @@ class DeepFFN10(BaseFeedForwardNetwork):
 
         return layer
 
-    def forward(self, x):
-        x = torch.flatten(x, 1)
+    def _forward(self, x):
         x = self.input(x)
-
-        x = self.dense1(x)
-        x = self.dense2(x)
-        x = self.dense3(x)
-        x = self.dense4(x)
-        x = self.dense5(x)
-        x = self.dense6(x)
-        x = self.dense7(x)
-        x = self.dense8(x)
-
-        x = self.output(x)
+        for layer in self.dense_layers:
+            x = layer(x)
         return x
+
+    @abstractmethod
+    def compute_loss(self, y_pred, y_true):
+        pass
+
+
+class DeepFFN10Classifier(DeepFFN10):
+    def _init(self, input_size: int, activation: str = "ReLU", output_size: int = 10):
+        super()._init(input_size, activation)
+        self.output_size = output_size
+        self.out = nn.Linear(128, output_size)
+
+    def _forward(self, x):
+        x = super(DeepFFN10Classifier, self)._forward(x)
+        x = self.out(x)
+        return x
+
+    def compute_loss(self, y_pred, y_true):
+        if y_true.ndim == 1:
+            y_true = F.one_hot(y_true, self.output_size) * 1.0
+        return self.criterion(y_pred, y_true)
