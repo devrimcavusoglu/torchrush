@@ -5,58 +5,41 @@
 <h1 align="center">TorchRush</h1>
 Yet another framework built on top of PyTorch that is designed with a high speed experimental setup in the mind.
 
-## Setup
+# Installation
 
-Create a conda environment and install required packages
+Install with
 
-    conda env create -f environment.yml
-
-Set up development with the following command (under project root directory), (you can use your IDE settings as well if supporting conda environments)
-
-    conda develop .
-
-## Training
-
-Training is quite straightforward with CLI or configuration file (json). You can see the help doc with the following commands
-
-    python stact/train.py from_cli --help
-
-or
-
-    python stact/train.py from_config --help
-
-Example training config is like follows, it includes all required construction and training arguments.
-
-```json
-{
-  "model_name": "ClassicMNISTModel",
-  "model_collection": "mnist",
-  "dataset": "mnist",
-  "criterion": "CrossEntropyLoss",
-  "lr": 0.01,
-  "epochs": 10,
-  "output_path": "default",
-  "exclude_validation": false,
-  "device": "cuda",
-  "optimizer": "SGD",
-  "weight_decay": 0,
-  "train_batch_size": 32,
-  "validation_batch_size": 32,
-  "num_workers": 1
-}
+```shell
+git clone git@github.com:devrimcavusoglu/torchrush-dev.git
+cd torchrush-dev
+pip install -e .[dev]
 ```
 
-To log the metrics into a neptune run, you need to also specify `neptune_config` argument which is path to the neptune configuration file (json). If not given, the trainer assumes the neptune config lies under `<PROJECT_ROOT>/cfg/neptune.json`, and tries to read from there. Example neptune config file.
 
-```json
-{
-    "project": "<neptune_project_name>",
-    "api_token": "<api_token>"
-}
+# Training
+
+Training is easy as follows.
+
+```python
+import pytorch_lightning as pl
+
+from torchrush.data_loader import DataLoader
+from torchrush.dataset import GenericImageClassificationDataset
+from torchrush.model.lenet5 import LeNetForClassification
+
+
+# Prepare datasets
+train_loader = DataLoader.from_datasets(
+        "mnist", split="train", constructor=GenericImageClassificationDataset, batch_size=32
+)
+val_loader = DataLoader.from_datasets(
+    "mnist", split="test", constructor=GenericImageClassificationDataset, batch_size=32
+)
+
+# Set model
+model = LeNetForClassification(criterion="CrossEntropyLoss", optimizer="SGD", input_size=(28, 28, 1), lr=0.01)
+
+# Train
+trainer = pl.Trainer(max_epochs=1)
+trainer.fit(model, train_loader, val_loader)
 ```
-
-After the training is completed, the model is saved to `outputs/` directory (it will be created if it doesn't exist). A unique directory will be created for the model, and the files (weights, jsons, etc.) are saved into this folder.
-
-## Prediction
-
-WIP.
