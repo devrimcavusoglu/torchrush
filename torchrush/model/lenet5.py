@@ -8,7 +8,7 @@ from torchrush.model.base import BaseModule
 
 
 class LeNet(BaseModule):
-    def init_model(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84):
+    def _init_model(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84):
         if input_size is None:
             input_size = (1, 28, 28)
             in_channels = 1
@@ -55,8 +55,8 @@ class LeNet(BaseModule):
 
 
 class LeNetForClassification(LeNet):
-    def init_model(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84, output_size: Optional[int] = 10):
-        super(LeNetForClassification, self).init_model(input_size, embedding_size)
+    def _init_model(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84, output_size: Optional[int] = 10):
+        super(LeNetForClassification, self)._init_model(input_size, embedding_size)
         self.output_size = output_size
         self.out = nn.Sequential(nn.ReLU(), nn.Linear(embedding_size, output_size))
 
@@ -69,25 +69,3 @@ class LeNetForClassification(LeNet):
         if y_true.ndim == 1:
             y_true = F.one_hot(y_true, self.output_size) * 1.0
         return self.criterion(y_pred, y_true)
-
-
-if __name__ == "__main__":
-    import pytorch_lightning as pl
-
-    from torchrush.data_loader import DataLoader
-    from torchrush.dataset import GenericImageClassificationDataset
-
-    # Prepare datasets
-    train_loader = DataLoader.from_datasets(
-            "mnist", split="train", constructor=GenericImageClassificationDataset, batch_size=32
-    )
-    val_loader = DataLoader.from_datasets(
-        "mnist", split="test", constructor=GenericImageClassificationDataset, batch_size=32
-    )
-
-    # Set model
-    model = LeNetForClassification(criterion="CrossEntropyLoss", optimizer="SGD", input_size=(28, 28, 1), lr=0.01)
-
-    # Train
-    trainer = pl.Trainer(max_epochs=1)
-    trainer.fit(model, train_loader, val_loader)

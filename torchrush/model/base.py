@@ -34,10 +34,10 @@ class BaseModule(pl.LightningModule):
             "criterion": criterion if isinstance(criterion, str) else criterion.__class__.__name__,
             **kwargs
         }
-        self.init_model(**kwargs)
+        self._init_model(**kwargs)
 
     @abstractmethod
-    def init_model(self, **kwargs):
+    def _init_model(self, **kwargs):
         pass
 
     @property
