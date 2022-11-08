@@ -8,7 +8,7 @@ from torchrush.model.base import BaseModule
 
 
 class DeepFFN10(BaseModule):
-    def _init(self, input_size: int, activation: str = "ReLU"):
+    def init_model(self, input_size: int, activation: str = "ReLU"):
         self.input = self.dense_block(self.input_nodes, 128, activation)
 
         self.dense_layers = ModuleList([self.dense_block(128, 128, activation) for _ in range(8)])
@@ -34,8 +34,8 @@ class DeepFFN10(BaseModule):
 
 
 class DeepFFN10Classifier(DeepFFN10):
-    def _init(self, input_size: int, activation: str = "ReLU", output_size: int = 10):
-        super()._init(input_size, activation)
+    def init_model(self, input_size: int, activation: str = "ReLU", output_size: int = 10):
+        super().init_model(input_size, activation)
         self.output_size = output_size
         self.out = nn.Linear(128, output_size)
 

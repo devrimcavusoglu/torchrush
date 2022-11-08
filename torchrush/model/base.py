@@ -1,3 +1,4 @@
+import warnings
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
@@ -22,16 +23,21 @@ class ArgumentHandler:
 
 
 class BaseModule(pl.LightningModule):
-    def __init__(self, criterion: Union[str, TorchLoss], optimizer: Union[str, TorchOptimizer], *args, **kwargs):
+    def __init__(self, optimizer: Union[str, TorchOptimizer], criterion: Union[str, TorchLoss] = None, **kwargs):
         super(BaseModule, self).__init__()
         self._criterion = None
         self._optimizer = None
         self._criterion_handle, self._optimizer_handle = self.setup_components(criterion, optimizer, **kwargs)
         kwargs = self._clean_kwargs(**kwargs)
-        self._init(*args, **kwargs)
+        self._rush_config = {
+            "optimizer": optimizer if isinstance(optimizer, str) else optimizer.__class__.__name__,
+            "criterion": criterion if isinstance(criterion, str) else criterion.__class__.__name__,
+            **kwargs
+        }
+        self.init_model(**kwargs)
 
     @abstractmethod
-    def _init(self, *args, **kwargs):
+    def init_model(self, **kwargs):
         pass
 
     @property
@@ -41,6 +47,10 @@ class BaseModule(pl.LightningModule):
     @property
     def optimizer(self):
         return self._optimizer
+
+    @property
+    def rush_config(self):
+        return self._rush_config
 
     def _clean_kwargs(self, **kwargs) -> Dict[str, Any]:
         keys_removed = []
@@ -59,9 +69,11 @@ class BaseModule(pl.LightningModule):
             if criterion_args is None:
                 criterion_args = {}
             criterion_is_object = False
-        elif not isinstance(criterion, TorchLoss):
-            raise ValueError(f"Expecting `str` or `torch.nn.modules._Loss` object, got " f"`{type(criterion)}`.")
         else:
+            if not isinstance(criterion, TorchLoss):
+                warnings.warn(f"To be automatically constructed `criterion` is expected to be a string or an instance of "
+                              f"`torch.nn.modules.loss._Loss`, got " f"`{type(criterion)}`. You need to explicitly define "
+                              f"the loss computation logic in `compute_loss()`.")
             criterion_args = {}
             criterion_is_object = True
 
