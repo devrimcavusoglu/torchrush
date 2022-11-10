@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import Optional, Tuple
 
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 from torchrush.model.base import BaseModule
 
@@ -55,7 +55,9 @@ class LeNet(BaseModule):
 
 
 class LeNetForClassification(LeNet):
-    def _init_model(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84, output_size: Optional[int] = 10):
+    def _init_model(
+        self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84, output_size: Optional[int] = 10
+    ):
         super(LeNetForClassification, self)._init_model(input_size, embedding_size)
         self.output_size = output_size
         self.out = nn.Sequential(nn.ReLU(), nn.Linear(embedding_size, output_size))

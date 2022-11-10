@@ -12,9 +12,7 @@ from torchrush.utils.torch_utils import seed_all
 class CallbackForTestingTrainer(Callback):
     losses = []
 
-    def on_train_batch_end(
-        self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int
-    ) -> None:
+    def on_train_batch_end(self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int) -> None:
         if batch_idx % 39 == 0:
             x, y = batch
             model_out = pl_module(x)

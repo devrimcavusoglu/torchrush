@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
 
+from torchrush.utils import get_versions
 from torchrush.utils.torch_utils import (
     get_criterion_args,
     get_criterion_by_name,
@@ -32,7 +33,8 @@ class BaseModule(pl.LightningModule):
         self._rush_config = {
             "optimizer": optimizer if isinstance(optimizer, str) else optimizer.__class__.__name__,
             "criterion": criterion if isinstance(criterion, str) else criterion.__class__.__name__,
-            **kwargs
+            "versions": get_versions(),
+            **kwargs,
         }
         self._init_model(**kwargs)
 
@@ -71,9 +73,12 @@ class BaseModule(pl.LightningModule):
             criterion_is_object = False
         else:
             if not isinstance(criterion, TorchLoss):
-                warnings.warn(f"To be automatically constructed `criterion` is expected to be a string or an instance of "
-                              f"`torch.nn.modules.loss._Loss`, got " f"`{type(criterion)}`. You need to explicitly define "
-                              f"the loss computation logic in `compute_loss()`.")
+                warnings.warn(
+                    f"To be automatically constructed `criterion` is expected to be a string or an instance of "
+                    f"`torch.nn.modules.loss._Loss`, got "
+                    f"`{type(criterion)}`. You need to explicitly define "
+                    f"the loss computation logic in `compute_loss()`."
+                )
             criterion_args = {}
             criterion_is_object = True
 
