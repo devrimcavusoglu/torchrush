@@ -6,7 +6,6 @@ from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset
 from torchrush.model.base import BaseModule
 from torchrush.model.lenet5 import LeNetForClassification
-from torchrush.utils.torch_utils import seed_all
 
 
 class CallbackForTestingTrainer(Callback):
@@ -27,7 +26,7 @@ def loss_callback():
 
 @pytest.fixture(scope="function")
 def rush_model():
-    seed_all(42)
+    pl.seed_everything(42)
     return LeNetForClassification(optimizer="SGD", criterion="CrossEntropyLoss", input_size=(28, 28, 1), lr=0.01)
 
 

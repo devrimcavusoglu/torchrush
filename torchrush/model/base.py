@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
 
-from torchrush.utils import get_versions
+from torchrush import get_versions
 from torchrush.utils.torch_utils import (
     get_criterion_args,
     get_criterion_by_name,
