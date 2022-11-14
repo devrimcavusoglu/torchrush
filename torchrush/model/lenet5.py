@@ -1,14 +1,14 @@
 from abc import abstractmethod
 from typing import Optional, Tuple
 
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 from torchrush.model.base import BaseModule
 
 
 class LeNet(BaseModule):
-    def _init(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84):
+    def _init_model(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84):
         if input_size is None:
             input_size = (1, 28, 28)
             in_channels = 1
@@ -55,8 +55,10 @@ class LeNet(BaseModule):
 
 
 class LeNetForClassification(LeNet):
-    def _init(self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84, output_size: Optional[int] = 10):
-        super(LeNetForClassification, self)._init(input_size, embedding_size)
+    def _init_model(
+        self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84, output_size: Optional[int] = 10
+    ):
+        super(LeNetForClassification, self)._init_model(input_size, embedding_size)
         self.output_size = output_size
         self.out = nn.Sequential(nn.ReLU(), nn.Linear(embedding_size, output_size))
 
@@ -69,4 +71,3 @@ class LeNetForClassification(LeNet):
         if y_true.ndim == 1:
             y_true = F.one_hot(y_true, self.output_size) * 1.0
         return self.criterion(y_pred, y_true)
-
