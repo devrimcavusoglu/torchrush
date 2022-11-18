@@ -26,7 +26,12 @@ class TensorBoardLogger(TensorBoardLogger):
     @rank_zero_only
     def log_any(self, any: Dict[str, Any]):
         for key, value in any.items():
-            self.experiment.add_scalar(key, value)
+            if isinstance(value, (int, float)):
+                self.writer.add_scalar(key, value)
+            elif isinstance(value, str):
+                self.writer.add_text(key, value)
+            elif isinstance(value, dict):
+                self.writer.add_scalars(key, value)
 
 
 class MLFlowLogger(MLFlowLogger):
