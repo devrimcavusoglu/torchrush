@@ -1,11 +1,6 @@
 from typing import Any, Dict
-from pytorch_lightning.loggers import (
-    NeptuneLogger,
-    WandbLogger,
-    TensorBoardLogger,
-    MLFlowLogger,
-    CSVLogger,
-)
+
+from pytorch_lightning.loggers import CSVLogger, MLFlowLogger, NeptuneLogger, TensorBoardLogger, WandbLogger
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
 
