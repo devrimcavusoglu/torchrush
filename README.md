@@ -15,7 +15,6 @@ cd torchrush-dev
 pip install -e .[dev]
 ```
 
-
 # Training
 
 Training is easy as follows.
@@ -42,4 +41,13 @@ model = LeNetForClassification(criterion="CrossEntropyLoss", optimizer="SGD", in
 # Train
 trainer = pl.Trainer(max_epochs=1)
 trainer.fit(model, train_loader, val_loader)
+```
+
+# Contributing
+
+Before opening a PR, run tests and reformat the code with:
+
+```bash
+python -m tests.run_tests
+python -m tests.run_code_style format
 ```
