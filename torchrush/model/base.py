@@ -141,3 +141,7 @@ class BaseModule(pl.LightningModule):
 
     def postprocess(self, x):
         return x
+
+    def log_any(self, any: Dict[str, Any]):
+        for logger in self.loggers:
+            logger.log_any(any)
