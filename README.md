@@ -51,3 +51,13 @@ Before opening a PR, run tests and reformat the code with:
 python -m tests.run_tests
 python -m tests.run_code_style format
 ```
+
+# Experiment tracking
+
+Logger classes should be imported from `torchrush.loggers`:
+
+```python
+from torchrush.loggers import TensorboardLogger, NeptuneLogger
+
+trainer = pl.Trainer(max_epochs=1, logger=[TensorboardLogger(), NeptuneLogger()])
+```

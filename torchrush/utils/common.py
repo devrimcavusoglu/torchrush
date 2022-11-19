@@ -9,6 +9,7 @@ from datasets import __version__ as _DATASETS_VERSION
 from pytorch_lightning import __version__ as _PYTORCH_LIGHTNING_VERSION
 from torch import __version__ as _PYTORCH_VERSION
 
+
 def isiterable(obj):
     return isinstance(obj, Iterable)
 
