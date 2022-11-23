@@ -61,3 +61,13 @@ from torchrush.loggers import TensorboardLogger, NeptuneLogger
 
 trainer = pl.Trainer(max_epochs=1, logger=[TensorboardLogger(), NeptuneLogger()])
 ```
+
+Metrics should be set using `torchrush.MetricCallback`:
+
+```python
+from torchrush import MetricCallback
+
+metric_callback = MetricCallback(metric_list=['accuracy', 'f1', 'precision', 'recall'], log_on='epoch_end')
+
+trainer = pl.Trainer(max_epochs=1, callbacks=[metric_callback])
+```

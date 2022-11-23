@@ -134,13 +134,13 @@ class MetricCallback(Callback):
             self._log_metrics(batch_idx, pl_module, mode="test")
 
     def on_train_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        if self.log_on == "epoch_end":
+        if self.log_on == "epoch_end" and trainer.current_epoch % self.eval_freq == 0:
             self._log_metrics(trainer.current_epoch, pl_module, mode="train")
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        if self.log_on == "epoch_end":
+        if self.log_on == "epoch_end" and trainer.current_epoch % self.eval_freq == 0:
             self._log_metrics(trainer.current_epoch, pl_module, mode="val")
 
     def on_test_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        if self.log_on == "epoch_end":
+        if self.log_on == "epoch_end" and trainer.current_epoch % self.eval_freq == 0:
             self._log_metrics(trainer.current_epoch, pl_module, mode="test")
