@@ -21,7 +21,7 @@ class DeepFFN10(BaseModule):
 
         return layer
 
-    def _forward(self, x):
+    def forward(self, x):
         x = self.input(x)
         for layer in self.dense_layers:
             x = layer(x)
@@ -38,7 +38,7 @@ class DeepFFN10Classifier(DeepFFN10):
         self.output_size = output_size
         self.out = nn.Linear(128, output_size)
 
-    def _forward(self, x):
+    def forward(self, x):
         x = super(DeepFFN10Classifier, self)._forward(x)
         x = self.out(x)
         return x

@@ -104,12 +104,8 @@ class BaseModule(pl.LightningModule):
         pass
 
     @abstractmethod
-    def _forward(self, x):
-        pass
-
     def forward(self, x):
-        x = self._forward(x)
-        return x
+        pass
 
     def configure_optimizers(self):
         criterion_handle = self._criterion_handle

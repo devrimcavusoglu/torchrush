@@ -31,7 +31,7 @@ class LeNet(BaseModule):
         self.fc1 = nn.Sequential(nn.Linear(256, 120), nn.ReLU())
         self.fc2 = nn.Linear(120, embedding_size)
 
-    def _forward(self, x):
+    def forward(self, x):
         """
         One forward pass through the network.
 
@@ -73,7 +73,7 @@ class LeNetForClassification(LeNet):
         self.output_size = output_size
         self.out = nn.Sequential(nn.ReLU(), nn.Linear(embedding_size, output_size))
 
-    def _forward(self, x):
+    def forward(self, x):
         x = super(LeNetForClassification, self)._forward(x)
         x = self.out(x)
         return x
