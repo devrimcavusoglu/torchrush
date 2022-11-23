@@ -102,13 +102,13 @@ class MetricCallback(Callback):
                 is_labelwise_metric = False
 
             # log overall score
-            pl_module.log_any({f"val/{metric}": overall_score}, step=step)
+            pl_module.log_any({f"{mode}/{metric}": overall_score}, step=step)
 
             # log label-wise scores
             if self.log_labelwise_metrics and is_labelwise_metric:
                 for label, score in zip(self.labels, scores):
                     pl_module.log_any(
-                        {f"val/{metric}_{label}": score},
+                        {f"{mode}/{metric}_{label}": score},
                         step=step,
                     )
         self._last_val_result = result
