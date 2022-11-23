@@ -67,7 +67,9 @@ Metrics should be set using `torchrush.MetricCallback`:
 ```python
 from torchrush import MetricCallback
 
-metric_callback = MetricCallback(metric_list=['accuracy', 'f1', 'precision', 'recall'], log_on='epoch_end')
+metric_callback = MetricCallback(metrics=['accuracy', 'f1', 'precision', 'recall'], log_on='epoch_end')
 
 trainer = pl.Trainer(max_epochs=1, callbacks=[metric_callback])
 ```
+
+`metric_list` can include any [evaluate default metrics](https://huggingface.co/evaluate-metric) or custom metrics from [hf/spaces](https://huggingface.co/spaces).
