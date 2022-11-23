@@ -70,4 +70,4 @@ class LeNetForClassification(LeNet):
     def compute_loss(self, y_pred, y_true):
         if y_true.ndim == 1:
             y_true = F.one_hot(y_true, self.output_size) * 1.0
-        return self.criterion(y_pred, y_true)
+        return {"loss": self.criterion(y_pred, y_true), "predictions": y_pred, "references": y_true}
