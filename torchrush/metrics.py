@@ -172,5 +172,5 @@ class MetricCallback(Callback):
             self._log_metrics(trainer.current_epoch, pl_module, mode="val")
 
     def on_test_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        if self.log_on == "epoch_end" and trainer.current_epoch % self.eval_freq == 0:
+        if self.log_on == "epoch_end":
             self._log_metrics(trainer.current_epoch, pl_module, mode="test")
