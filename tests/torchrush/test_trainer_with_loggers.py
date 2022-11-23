@@ -1,17 +1,16 @@
+import os
 import shutil
+from unittest.mock import MagicMock
+
 import pytest
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback
 
 from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset
+from torchrush.loggers import CSVLogger, TensorBoardLogger
 from torchrush.model.base import BaseModule
 from torchrush.model.lenet5 import LeNetForClassification
-import os
-
-from unittest.mock import MagicMock
-
-from torchrush.loggers import CSVLogger, TensorBoardLogger
 
 TEMP_LOG_DIR = "temp_log_dir"
 
