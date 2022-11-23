@@ -102,7 +102,7 @@ class BaseModule(pl.LightningModule):
     def compute_loss(self, y_pred, y_true):
         """
         Should return dict with key `loss`. Can optionally return keys
-        `predictions` and `references` for supervised metric calculation.
+        `predictions` and `references` for metric calculation.
         """
         pass
 
