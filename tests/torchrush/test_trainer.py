@@ -15,8 +15,8 @@ class CallbackForTestingTrainer(Callback):
         if batch_idx % 39 == 0:
             x, y = batch
             model_out = pl_module(x)
-            loss = pl_module.compute_loss(model_out, y)
-            self.losses.append(loss.item())
+            result = pl_module.compute_loss(model_out, y)
+            self.losses.append(result["loss"].item())
 
 
 @pytest.fixture
