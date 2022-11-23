@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Optional, Tuple
 
 import torch.nn.functional as F
+import torch
 from torch import nn
 
 from torchrush.model.base import BaseModule
@@ -48,10 +49,20 @@ class LeNet(BaseModule):
     def compute_loss(self, y_pred, y_true):
         pass
 
-    def preprocess(self, x):
+    def shared_step(self, batch, batch_idx, mode="train"):
+        # preprocess
+        x, y = batch
         if len(self.input_size) == 1:
             return x.view(x.size(0), -1)
-        return x
+
+        # forward
+        logits = self(x)
+
+        # compute loss
+        loss = self.compute_loss(logits, y)
+
+        # prepare output
+        return {"loss": loss, "predictions": torch.argmax(logits, -1), "references": y}
 
 
 class LeNetForClassification(LeNet):
@@ -70,4 +81,4 @@ class LeNetForClassification(LeNet):
     def compute_loss(self, y_pred, y_true):
         if y_true.ndim == 1:
             y_true = F.one_hot(y_true, self.output_size) * 1.0
-        return {"loss": self.criterion(y_pred, y_true), "predictions": y_pred, "references": y_true}
+        return self.criterion(y_pred, y_true)

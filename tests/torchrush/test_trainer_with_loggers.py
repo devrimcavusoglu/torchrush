@@ -22,8 +22,8 @@ class CallbackForTestingTrainer(Callback):
         if batch_idx % 39 == 0:
             x, y = batch
             model_out = pl_module(x)
-            result = pl_module.compute_loss(model_out, y)
-            self.losses.append(result["loss"].item())
+            loss = pl_module.compute_loss(model_out, y)
+            self.losses.append(loss.item())
 
 
 @pytest.fixture
@@ -68,8 +68,8 @@ def test_rushmodel_logs_with_rushloggers(rush_model, loss_callback):
     rush_model.log_any(SAMPLE_LOG_DICT)
 
     # check if the logger is called properly
-    csv_logger.experiment.log_metrics.assert_called_with(SAMPLE_LOG_DICT)
-    tb_logger.experiment.add_scalar.assert_called_with("accuracy", 0.9)
+    csv_logger.experiment.log_metrics.assert_called_with(SAMPLE_LOG_DICT, step=None)
+    tb_logger.experiment.add_scalar.assert_called_with("accuracy", 0.9, global_step=None)
 
 
 def test_pltrainer_trains_with_rushloggers(rush_model, data_loaders, loss_callback):
