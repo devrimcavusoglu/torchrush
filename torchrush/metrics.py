@@ -32,7 +32,7 @@ class MetricCallback(Callback):
     def __init__(
         self,
         eval_freq: int = 1,
-        metric_list: List[str] = None,
+        metrics: List[str] = None,
         labels: List[str] = None,
         log_labelwise_metrics: bool = False,
         log_on: str = "epoch_end",
@@ -41,9 +41,9 @@ class MetricCallback(Callback):
         super().__init__()
         self.eval_freq = eval_freq
         self.combined_evaluations = {
-            "train": CombinedEvaluations(metric_list),
-            "val": CombinedEvaluations(metric_list),
-            "test": CombinedEvaluations(metric_list),
+            "train": CombinedEvaluations(metrics),
+            "val": CombinedEvaluations(metrics),
+            "test": CombinedEvaluations(metrics),
         }
 
         if log_labelwise_metrics and labels is None:
