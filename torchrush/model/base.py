@@ -100,6 +100,10 @@ class BaseModule(pl.LightningModule):
 
     @abstractmethod
     def compute_loss(self, y_pred, y_true):
+        """
+        Should return dict with key `loss`. Can optionally return keys
+        `predictions` and `references` for supervised metric calculation.
+        """
         pass
 
     @abstractmethod
@@ -145,3 +149,7 @@ class BaseModule(pl.LightningModule):
     def log_any(self, any: Dict[str, Any]):
         for logger in self.loggers:
             logger.log_any(any)
+
+    def log_hyperparams(self):
+        for logger in self.loggers:
+            logger.log_hyperparams(self.rush_config)

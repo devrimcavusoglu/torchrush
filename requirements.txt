@@ -5,3 +5,4 @@ pytorch-lightning==1.8.2
 torchvision==0.13.1
 torch==1.12.1
 tqdm
+evaluate==0.3.0
