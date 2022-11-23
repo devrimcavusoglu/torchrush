@@ -77,7 +77,7 @@ class MetricCallback(Callback):
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
         # log supervised metrics if possible
-        result = self.combined_evaluations.compute(average=None, zero_division=0)
+        result = self.combined_evaluations[mode].compute(average=None, zero_division=0)
         for metric, scores in result.items():
             # log macro score
             pl_module.log_any({f"val/{metric}": scores.mean()}, step=step)
