@@ -48,28 +48,21 @@ trainer.fit(model, train_loader, val_loader)
 Before opening a PR, run tests and reformat the code with:
 
 ```bash
-python -m tests.run_tests
+python -m tests.run_tests -rx
 python -m tests.run_code_style format
 ```
 
 # Experiment tracking
 
-Logger classes should be imported from `torchrush.loggers`:
+Logger classes should be imported from `torchrush.loggers` and metrics should be set using `torchrush.MetricCallback`:
 
 ```python
 from torchrush.loggers import TensorboardLogger, NeptuneLogger
-
-trainer = pl.Trainer(max_epochs=1, logger=[TensorboardLogger(), NeptuneLogger()])
-```
-
-Metrics should be set using `torchrush.MetricCallback`:
-
-```python
-from torchrush import MetricCallback
+from torchrush.metrics import MetricCallback
 
 metric_callback = MetricCallback(metrics=['accuracy', 'f1', 'precision', 'recall'], log_on='epoch_end')
 
-trainer = pl.Trainer(max_epochs=1, callbacks=[metric_callback])
+trainer = pl.Trainer(max_epochs=1, logger=[TensorboardLogger(), NeptuneLogger()], callbacks=[metric_callback])
 ```
 
 `metric_list` can include any [evaluate default metrics](https://huggingface.co/evaluate-metric) or custom metrics from [hf/spaces](https://huggingface.co/spaces).
