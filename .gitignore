@@ -143,3 +143,6 @@ dmypy.json
 
 # pt-lightning
 lightning_logs/
+
+# vscode
+.vscode
