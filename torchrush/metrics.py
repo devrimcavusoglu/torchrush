@@ -7,6 +7,13 @@ from pytorch_lightning import Callback
 from pytorch_lightning.utilities.model_summary import summarize
 
 
+LABELWISE_SUPPORTED_METRICS = [
+    "precision",
+    "recall",
+    "f1",
+]
+
+
 class CombinedEvaluations:
     # place holder for evaluate.combine till https://github.com/huggingface/evaluate/issues/234 is fixed
     def __init__(self, metrics: List[str]):
@@ -16,13 +23,22 @@ class CombinedEvaluations:
         for metric in self.metrics:
             metric.add_batch(predictions=predictions, references=references)
 
-    def compute(self, **kwargs):
+    def compute(self, labelwise=False, **kwargs):
         results = {}
-        zero_division = kwargs.get("zero_division", "warn")
-        kwargs.pop("zero_division")
+
+        zero_division = kwargs.get("zero_division", 0)
+        if kwargs.get("zero_division") is not None:
+            kwargs.pop("zero_division")
+
+        average = kwargs.get("average", "macro") if not labelwise else None
+        if kwargs.get("average") is not None:
+            kwargs.pop("average")
+
         for metric in self.metrics:
             if metric.name == "precision":
-                results.update(metric.compute(zero_division=zero_division, **kwargs))
+                results.update(metric.compute(zero_division=zero_division, average=average, **kwargs))
+            elif metric.name in LABELWISE_SUPPORTED_METRICS:
+                results.update(metric.compute(average=average, **kwargs))
             else:
                 results.update(metric.compute(**kwargs))
         return results
@@ -37,7 +53,6 @@ class MetricCallback(Callback):
         log_labelwise_metrics: bool = False,
         log_on: str = "epoch_end",
     ):
-        """Init metrics on train calss init."""
         super().__init__()
         self.eval_freq = eval_freq
         self.combined_evaluations = {
@@ -66,7 +81,7 @@ class MetricCallback(Callback):
         if mode not in ["train", "val", "test"]:
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
-        # accumulate supervised metrics if possible
+        # accumulate metrics if possible
         if "predictions" and "references" in outputs:
             self.combined_evaluations[mode].add_batch(
                 predictions=outputs["predictions"], references=outputs["references"]
@@ -76,13 +91,21 @@ class MetricCallback(Callback):
         if mode not in ["train", "val", "test"]:
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
-        # log supervised metrics if possible
-        result = self.combined_evaluations[mode].compute(average=None, zero_division=0)
+        # log metrics if possible
+        result = self.combined_evaluations[mode].compute(labelwise=self.log_labelwise_metrics)
         for metric, scores in result.items():
-            # log macro score
-            pl_module.log_any({f"val/{metric}": scores.mean()}, step=step)
+            try:  # calculate macro score if labelwise scores are available
+                overall_score = scores.mean().item()
+                is_labelwise_metric = True
+            except AttributeError:
+                overall_score = scores
+                is_labelwise_metric = False
+
+            # log overall score
+            pl_module.log_any({f"val/{metric}": overall_score}, step=step)
+
             # log label-wise scores
-            if self.log_labelwise_metrics:
+            if self.log_labelwise_metrics and is_labelwise_metric:
                 for label, score in zip(self.labels, scores):
                     pl_module.log_any(
                         {f"val/{metric}_{label}": score},
@@ -97,7 +120,6 @@ class MetricCallback(Callback):
         outputs,
         batch,
         batch_idx: int,
-        dataloader_idx: int,
     ) -> None:
         # accumulate metrics
         self._accumulate_metrics(outputs, mode="train")
