@@ -91,7 +91,13 @@ class MetricCallback(Callback):
         self._last_val_result = result
 
     def on_train_batch_end(
-        self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", outputs, batch, batch_idx: int
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
+        outputs,
+        batch,
+        batch_idx: int,
+        dataloader_idx: int,
     ) -> None:
         # accumulate metrics
         self._accumulate_metrics(outputs, mode="train")
@@ -108,6 +114,7 @@ class MetricCallback(Callback):
         outputs,
         batch,
         batch_idx: int,
+        dataloader_idx: int,
     ) -> None:
         # accumulate metrics
         self._accumulate_metrics(outputs, mode="val")
@@ -124,6 +131,7 @@ class MetricCallback(Callback):
         outputs,
         batch,
         batch_idx: int,
+        dataloader_idx: int,
     ) -> None:
         # accumulate metrics
         self._accumulate_metrics(outputs, mode="test")
