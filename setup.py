@@ -32,6 +32,7 @@ _DEV_REQUIREMENTS = [
     "pytest>=7.0.1",
     "pytest-cov>=3.0.0",
     "pytest-timeout>=2.1.0",
+    "scikit-learn>=1.1.3,<1.2.0",
 ]
 
 extras = {
