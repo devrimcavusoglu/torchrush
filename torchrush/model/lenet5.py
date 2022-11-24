@@ -38,6 +38,8 @@ class LeNet(BaseModule):
         Args:
             x: input
         """
+        if len(self.input_size) == 1:
+            return x.view(x.size(0), -1)
         x = self.layer1(x)
         x = self.layer2(x)
         x = x.flatten(start_dim=1)
@@ -52,8 +54,6 @@ class LeNet(BaseModule):
     def shared_step(self, batch, batch_idx, mode="train"):
         # preprocess
         x, y = batch
-        if len(self.input_size) == 1:
-            return x.view(x.size(0), -1)
 
         # forward
         logits = self(x)
