@@ -74,7 +74,7 @@ class LeNetForClassification(LeNet):
         self.out = nn.Sequential(nn.ReLU(), nn.Linear(embedding_size, output_size))
 
     def forward(self, x):
-        x = super(LeNetForClassification, self)._forward(x)
+        x = super(LeNetForClassification, self).forward(x)
         x = self.out(x)
         return x
 

@@ -39,7 +39,7 @@ class DeepFFN10Classifier(DeepFFN10):
         self.out = nn.Linear(128, output_size)
 
     def forward(self, x):
-        x = super(DeepFFN10Classifier, self)._forward(x)
+        x = super(DeepFFN10Classifier, self).forward(x)
         x = self.out(x)
         return x
 
