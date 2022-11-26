@@ -108,6 +108,9 @@ class MetricCallback(Callback):
                     )
         self._last_val_result = result
 
+    def _should_log(self, trainer: "pl.Trainer") -> bool:
+        return not trainer.sanity_checking and trainer.fit_loop.epoch_loop._should_check_val_fx()
+
     def on_train_batch_end(
         self,
         trainer: "pl.Trainer",
@@ -120,7 +123,7 @@ class MetricCallback(Callback):
 
         # log metrics
         pl_module.log_any({"train/loss": outputs["loss"].item()}, step=batch_idx)
-        if not trainer.sanity_checking and trainer.fit_loop.epoch_loop._should_check_val_fx():
+        if self._should_log():
             self._log_metrics(batch_idx, pl_module, mode="train")
 
     def on_validation_batch_end(
@@ -136,7 +139,7 @@ class MetricCallback(Callback):
 
         # log metrics
         pl_module.log_any({"val/loss": outputs["loss"].item()}, step=batch_idx)
-        if not trainer.sanity_checking and trainer.fit_loop.epoch_loop._should_check_val_fx():
+        if self._should_log():
             self._log_metrics(batch_idx, pl_module, mode="val")
 
     def on_test_batch_end(
@@ -152,5 +155,5 @@ class MetricCallback(Callback):
 
         # log metrics
         pl_module.log_any({"test/loss": outputs["loss"].item()}, step=batch_idx)
-        if not trainer.sanity_checking and trainer.fit_loop.epoch_loop._should_check_val_fx():
+        if self._should_log():
             self._log_metrics(batch_idx, pl_module, mode="test")
