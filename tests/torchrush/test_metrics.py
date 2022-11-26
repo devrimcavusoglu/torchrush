@@ -86,6 +86,19 @@ def batch_step_outputs():
     return outputs
 
 
+def prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger):
+    # attach dataloaders and model to trainer
+    train_loader, val_loader = data_loaders
+    pl_trainer._data_connector.attach_data(rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+    pl_trainer.reset_train_dataloader(rush_model)
+    pl_trainer.reset_val_dataloader(rush_model)
+    pl_trainer.strategy._lightning_module = rush_model
+
+    # check logger is attached to the trainer and model
+    assert pl_trainer.loggers == [mock_logger]
+    assert rush_model.loggers == [mock_logger]
+
+
 @pytest.fixture
 def pl_trainer_on_train_batch_end(rush_model, mock_logger, data_loaders):
     val_check_interval = 33
@@ -135,16 +148,7 @@ def pl_trainer_on_val_batch_with_mock_combined_evaluations(rush_model, mock_logg
         callbacks=[metric_callback],
     )
 
-    # attach dataloaders and model to trainer
-    train_loader, val_loader = data_loaders
-    pl_trainer._data_connector.attach_data(rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    pl_trainer.reset_train_dataloader(rush_model)
-    pl_trainer.reset_val_dataloader(rush_model)
-    pl_trainer.strategy._lightning_module = rush_model
-
-    # check logger is attached to the trainer and model
-    assert pl_trainer.loggers == [mock_logger]
-    assert rush_model.loggers == [mock_logger]
+    prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger)
 
     # set batch_idx to be the validation batch index
     batch_idx = val_check_interval - 1
@@ -171,16 +175,7 @@ def pl_trainer_on_val_batch_with_mock_metrics(rush_model, mock_logger, data_load
         callbacks=[metric_callback],
     )
 
-    # attach dataloaders and model to trainer
-    train_loader, val_loader = data_loaders
-    pl_trainer._data_connector.attach_data(rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    pl_trainer.reset_train_dataloader(rush_model)
-    pl_trainer.reset_val_dataloader(rush_model)
-    pl_trainer.strategy._lightning_module = rush_model
-
-    # check logger is attached to the trainer and model
-    assert pl_trainer.loggers == [mock_logger]
-    assert rush_model.loggers == [mock_logger]
+    prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger)
 
     # set batch_idx to be the validation batch index
     batch_idx = val_check_interval - 1
@@ -208,16 +203,7 @@ def pl_trainer_on_val_batch_with_labelwise_mock_metrics(rush_model, mock_logger,
         callbacks=[metric_callback],
     )
 
-    # attach dataloaders and model to trainer
-    train_loader, val_loader = data_loaders
-    pl_trainer._data_connector.attach_data(rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    pl_trainer.reset_train_dataloader(rush_model)
-    pl_trainer.reset_test_dataloader(rush_model)
-    pl_trainer.strategy._lightning_module = rush_model
-
-    # check logger is attached to the trainer and model
-    assert pl_trainer.loggers == [mock_logger]
-    assert rush_model.loggers == [mock_logger]
+    prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger)
 
     # set batch_idx to be the validation batch index
     batch_idx = val_check_interval - 1
@@ -242,16 +228,7 @@ def pl_trainer_on_val_epoch_with_labelwise_metric_callback(rush_model, mock_logg
         callbacks=[metric_callback],
     )
 
-    # attach dataloaders and model to trainer
-    train_loader, val_loader = data_loaders
-    pl_trainer._data_connector.attach_data(rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    pl_trainer.reset_train_dataloader(rush_model)
-    pl_trainer.reset_val_dataloader(rush_model)
-    pl_trainer.strategy._lightning_module = rush_model
-
-    # check logger is attached to the trainer and model
-    assert pl_trainer.loggers == [mock_logger]
-    assert rush_model.loggers == [mock_logger]
+    prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger)
 
     # set current_epoch to 1
     pl_trainer.fit_loop.epoch_progress.current.completed = 1
