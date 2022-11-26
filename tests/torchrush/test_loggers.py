@@ -1,17 +1,16 @@
+import os
 import shutil
+from unittest.mock import MagicMock
+
 import pytest
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback
 
 from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset
+from torchrush.loggers import CSVLogger, TensorBoardLogger
 from torchrush.model.base import BaseModule
 from torchrush.model.lenet5 import LeNetForClassification
-import os
-
-from unittest.mock import MagicMock
-
-from torchrush.loggers import CSVLogger, TensorBoardLogger
 
 TEMP_LOG_DIR = "temp_log_dir"
 
@@ -69,8 +68,8 @@ def test_rushmodel_logs_with_rushloggers(rush_model, loss_callback):
     rush_model.log_any(SAMPLE_LOG_DICT)
 
     # check if the logger is called properly
-    csv_logger.experiment.log_metrics.assert_called_with(SAMPLE_LOG_DICT)
-    tb_logger.experiment.add_scalar.assert_called_with("accuracy", 0.9)
+    csv_logger.experiment.log_metrics.assert_called_with(SAMPLE_LOG_DICT, step=None)
+    tb_logger.experiment.add_scalar.assert_called_with("accuracy", 0.9, global_step=None)
 
 
 def test_pltrainer_trains_with_rushloggers(rush_model, data_loaders, loss_callback):

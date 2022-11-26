@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Optional, Tuple
 
 import torch.nn.functional as F
+import torch
 from torch import nn
 
 from torchrush.model.base import BaseModule
@@ -30,13 +31,15 @@ class LeNet(BaseModule):
         self.fc1 = nn.Sequential(nn.Linear(256, 120), nn.ReLU())
         self.fc2 = nn.Linear(120, embedding_size)
 
-    def _forward(self, x):
+    def forward(self, x):
         """
         One forward pass through the network.
 
         Args:
             x: input
         """
+        if len(self.input_size) == 1:
+            return x.view(x.size(0), -1)
         x = self.layer1(x)
         x = self.layer2(x)
         x = x.flatten(start_dim=1)
@@ -48,10 +51,18 @@ class LeNet(BaseModule):
     def compute_loss(self, y_pred, y_true):
         pass
 
-    def preprocess(self, x):
-        if len(self.input_size) == 1:
-            return x.view(x.size(0), -1)
-        return x
+    def shared_step(self, batch, batch_idx, mode="train"):
+        # preprocess
+        x, y = batch
+
+        # forward
+        logits = self(x)
+
+        # compute loss
+        loss = self.compute_loss(logits, y)
+
+        # prepare output
+        return {"loss": loss, "predictions": torch.argmax(logits, -1), "references": y}
 
 
 class LeNetForClassification(LeNet):
@@ -62,8 +73,8 @@ class LeNetForClassification(LeNet):
         self.output_size = output_size
         self.out = nn.Sequential(nn.ReLU(), nn.Linear(embedding_size, output_size))
 
-    def _forward(self, x):
-        x = super(LeNetForClassification, self)._forward(x)
+    def forward(self, x):
+        x = super(LeNetForClassification, self).forward(x)
         x = self.out(x)
         return x
 

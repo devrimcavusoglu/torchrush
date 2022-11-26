@@ -21,7 +21,7 @@ class DeepFFN10(BaseModule):
 
         return layer
 
-    def _forward(self, x):
+    def forward(self, x):
         x = self.input(x)
         for layer in self.dense_layers:
             x = layer(x)
@@ -38,12 +38,12 @@ class DeepFFN10Classifier(DeepFFN10):
         self.output_size = output_size
         self.out = nn.Linear(128, output_size)
 
-    def _forward(self, x):
-        x = super(DeepFFN10Classifier, self)._forward(x)
+    def forward(self, x):
+        x = super(DeepFFN10Classifier, self).forward(x)
         x = self.out(x)
         return x
 
     def compute_loss(self, y_pred, y_true):
         if y_true.ndim == 1:
-            y_true = F.one_hot(y_true, self.output_size) * 1.0
+            y_true = torch.nn.functional.one_hot(y_true, self.output_size) * 1.0
         return self.criterion(y_pred, y_true)

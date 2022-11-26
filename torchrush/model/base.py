@@ -6,6 +6,7 @@ from typing import Any, Dict, Tuple, Union
 import pytorch_lightning as pl
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
+import torch
 
 from torchrush.utils.common import get_versions
 from torchrush.utils.torch_utils import (
@@ -103,14 +104,8 @@ class BaseModule(pl.LightningModule):
         pass
 
     @abstractmethod
-    def _forward(self, x):
-        pass
-
     def forward(self, x):
-        x = self.preprocess(x)
-        x = self._forward(x)
-        x = self.postprocess(x)
-        return x
+        pass
 
     def configure_optimizers(self):
         criterion_handle = self._criterion_handle
@@ -126,22 +121,29 @@ class BaseModule(pl.LightningModule):
             self._optimizer = get_optimizer_by_name(optimizer_handle.name_or_object, **optimizer_handle.arguments)
         return self.optimizer
 
+    def shared_step(self, batch, batch_idx, mode="train"):
+        """
+        Should return dict with key `loss`. Can optionally return keys
+        `predictions` and `references` for metric calculation.
+        """
+        inputs, references = batch
+        logits = self(inputs)
+        loss = self.compute_loss(logits, references)
+        return {"loss": loss, "predictions": torch.argmax(logits, -1), "references": references}
+
     def training_step(self, batch, batch_index):
-        x, y = batch
-        model_out = self(x)
-        return self.compute_loss(model_out, y)
+        return self.shared_step(batch, batch_index, mode="train")
 
     def validation_step(self, batch, batch_index):
-        x, y = batch
-        model_out = self(x)
-        return self.compute_loss(model_out, y)
+        return self.shared_step(batch, batch_index, mode="val")
 
-    def preprocess(self, x):
-        return x
+    def test_step(self, batch, batch_index):
+        return self.shared_step(batch, batch_index, mode="test")
 
-    def postprocess(self, x):
-        return x
-
-    def log_any(self, any: Dict[str, Any]):
+    def log_any(self, any: Dict[str, Any], step: int = None):
         for logger in self.loggers:
-            logger.log_any(any)
+            logger.log_any(any, step)
+
+    def log_hyperparams(self):
+        for logger in self.loggers:
+            logger.log_hyperparams(self.rush_config)
