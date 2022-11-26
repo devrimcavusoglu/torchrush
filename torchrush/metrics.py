@@ -123,7 +123,7 @@ class MetricCallback(Callback):
 
         # log metrics
         pl_module.log_any({"train/loss": outputs["loss"].item()}, step=batch_idx)
-        if self._should_log_metrics():
+        if self._should_log_metrics(trainer):
             self._log_metrics(batch_idx, pl_module, mode="train")
 
     def on_validation_batch_end(
@@ -139,7 +139,7 @@ class MetricCallback(Callback):
 
         # log metrics
         pl_module.log_any({"val/loss": outputs["loss"].item()}, step=batch_idx)
-        if self._should_log_metrics():
+        if self._should_log_metrics(trainer):
             self._log_metrics(batch_idx, pl_module, mode="val")
 
     def on_test_batch_end(
@@ -155,5 +155,5 @@ class MetricCallback(Callback):
 
         # log metrics
         pl_module.log_any({"test/loss": outputs["loss"].item()}, step=batch_idx)
-        if self._should_log_metrics():
+        if self._should_log_metrics(trainer):
             self._log_metrics(batch_idx, pl_module, mode="test")
