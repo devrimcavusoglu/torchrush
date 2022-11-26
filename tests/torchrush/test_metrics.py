@@ -277,7 +277,7 @@ def test_rushmetrics_callback_train_batch_end(
         predictions=batch_step_outputs["predictions"], references=batch_step_outputs["references"]
     )
     metric_callback.combined_evaluations["train"].compute.assert_called_with(labelwise=False)
-    mock_logger.log_any.assert_called_with({"train/loss": batch_step_outputs["loss"].item()}, batch_idx)
+    mock_logger.log_any.assert_called_with({"train/loss": batch_step_outputs["loss"]}, batch_idx)
 
 
 def test_rushmetrics_callback_val_batch_end(
@@ -289,7 +289,7 @@ def test_rushmetrics_callback_val_batch_end(
     metric_callback.on_validation_batch_end(pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0)
     metric_callback.combined_evaluations["val"].metrics[0].compute.assert_called_with()
     metric_callback.combined_evaluations["val"].metrics[1].compute.assert_called_with(average="macro")
-    mock_logger.log_any.assert_called_with({"val/loss": batch_step_outputs["loss"].item()}, batch_idx)
+    mock_logger.log_any.assert_called_with({"val/loss": batch_step_outputs["loss"]}, batch_idx)
 
 
 def test_rushmetrics_callback_test_batch_end_labelwise(
@@ -301,7 +301,7 @@ def test_rushmetrics_callback_test_batch_end_labelwise(
     metric_callback.on_test_batch_end(pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0)
     metric_callback.combined_evaluations["test"].metrics[0].compute.assert_called_with()
     metric_callback.combined_evaluations["test"].metrics[1].compute.assert_called_with(average=None)
-    mock_logger.log_any.assert_called_with({"test/loss": batch_step_outputs["loss"].item()}, batch_idx)
+    mock_logger.log_any.assert_called_with({"test/loss": batch_step_outputs["loss"]}, batch_idx)
 
 
 def test_rushmetrics_callback_val_epoch_end_labelwise(
