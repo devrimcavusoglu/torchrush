@@ -18,11 +18,11 @@ class CombinedEvaluations:
     def __init__(self, metrics: List[str]):
         self.metrics = [evaluate.load(metric) if isinstance(metric, str) else metric for metric in metrics]
 
-    def add_batch(self, predictions: Any, references: Any):
+    def add_batch(self, predictions: Any, references: Any) -> None:
         for metric in self.metrics:
             metric.add_batch(predictions=predictions, references=references)
 
-    def compute(self, labelwise=False, **kwargs):
+    def compute(self, labelwise: bool = False, **kwargs) -> Dict[str, float]:
         results = {}
 
         zero_division = kwargs.get("zero_division", 0)
@@ -72,7 +72,7 @@ class MetricCallback(Callback):
 
         pl_module.log_hyperparams()
 
-    def _add_batch(self, outputs: Dict[str, torch.Tensor], mode: str = "train"):
+    def _add_batch(self, outputs: Dict[str, Any], mode: str = "train") -> None:
         if mode not in ["train", "val", "test"]:
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
@@ -82,7 +82,7 @@ class MetricCallback(Callback):
                 predictions=outputs["predictions"], references=outputs["references"]
             )
 
-    def _log_metrics(self, step: int, pl_module: "pl.LightningModule", mode: str = "train"):
+    def _log_metrics(self, step: int, pl_module: "pl.LightningModule", mode: str = "train") -> None:
         if mode not in ["train", "val", "test"]:
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
@@ -115,8 +115,8 @@ class MetricCallback(Callback):
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs: Dict[str, torch.Tensor],
-        batch,
+        outputs: Dict[str, Any],
+        batch: Any,
         batch_idx: int,
     ) -> None:
         self._add_batch(outputs, mode="train")
@@ -130,8 +130,8 @@ class MetricCallback(Callback):
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs: Dict[str, torch.Tensor],
-        batch,
+        outputs: Dict[str, Any],
+        batch: Any,
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
@@ -146,8 +146,8 @@ class MetricCallback(Callback):
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs: Dict[str, torch.Tensor],
-        batch,
+        outputs: Dict[str, Any],
+        batch: Any,
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
