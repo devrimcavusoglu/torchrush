@@ -350,6 +350,7 @@ def test_rushmetrics_callback_val_epoch_end_labelwise(
 def test_pltrainer_trains_with_rushmetrics(rush_model, data_loaders):
     tb_logger = TensorBoardLogger(save_dir=TEMP_LOG_DIR)
 
+
     metric_callback = MetricCallback(metrics=["accuracy", "f1", "precision", "recall"])
 
     train_loader, val_loader = data_loaders
