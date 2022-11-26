@@ -6,7 +6,6 @@ import torch
 from pytorch_lightning import Callback
 from pytorch_lightning.utilities.model_summary import summarize
 
-
 LABELWISE_SUPPORTED_METRICS = [
     "precision",
     "recall",

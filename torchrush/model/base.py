@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
 
 import pytorch_lightning as pl
+import torch
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
-import torch
 
 from torchrush.utils.common import get_versions
 from torchrush.utils.torch_utils import (

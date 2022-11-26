@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import pytorch_lightning as pl
+import torch
 from pytorch_lightning.callbacks import Callback
 
 from torchrush.data_loader import DataLoader
@@ -11,7 +12,6 @@ from torchrush.loggers import TensorBoardLogger
 from torchrush.metrics import CombinedEvaluations, MetricCallback
 from torchrush.model.base import BaseModule
 from torchrush.model.lenet5 import LeNetForClassification
-import torch
 
 TEMP_LOG_DIR = "temp_log_dir"
 
@@ -349,7 +349,6 @@ def test_rushmetrics_callback_val_epoch_end_labelwise(
 
 def test_pltrainer_trains_with_rushmetrics(rush_model, data_loaders):
     tb_logger = TensorBoardLogger(save_dir=TEMP_LOG_DIR)
-
 
     metric_callback = MetricCallback(metrics=["accuracy", "f1", "precision", "recall"])
 
