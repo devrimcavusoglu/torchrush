@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 
 import evaluate
 import pytorch_lightning as pl
@@ -72,7 +72,7 @@ class MetricCallback(Callback):
 
         pl_module.log_hyperparams()
 
-    def _add_batch(self, outputs, mode: str = "train"):
+    def _add_batch(self, outputs: Dict[str, torch.Tensor], mode: str = "train"):
         if mode not in ["train", "val", "test"]:
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
@@ -112,7 +112,7 @@ class MetricCallback(Callback):
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs,
+        outputs: Dict[str, torch.Tensor],
         batch,
         batch_idx: int,
     ) -> None:
@@ -127,7 +127,7 @@ class MetricCallback(Callback):
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs,
+        outputs: Dict[str, torch.Tensor],
         batch,
         batch_idx: int,
         dataloader_idx: int,
@@ -143,7 +143,7 @@ class MetricCallback(Callback):
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs,
+        outputs: Dict[str, torch.Tensor],
         batch,
         batch_idx: int,
         dataloader_idx: int,
