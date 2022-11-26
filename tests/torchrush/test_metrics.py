@@ -114,16 +114,7 @@ def pl_trainer_on_train_batch_end(rush_model, mock_logger, data_loaders):
         callbacks=[metric_callback],
     )
 
-    # attach dataloaders and model to trainer
-    train_loader, val_loader = data_loaders
-    pl_trainer._data_connector.attach_data(rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    pl_trainer.reset_train_dataloader(rush_model)
-    pl_trainer.reset_val_dataloader(rush_model)
-    pl_trainer.strategy._lightning_module = rush_model
-
-    # check logger is attached to the trainer and model
-    assert pl_trainer.loggers == [mock_logger]
-    assert rush_model.loggers == [mock_logger]
+    prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger)
 
     # set batch_idx to be the validation batch index
     batch_idx = val_check_interval - 1
