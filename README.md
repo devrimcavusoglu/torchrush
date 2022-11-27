@@ -71,4 +71,4 @@ trainer = pl.Trainer(
 )
 ```
 
-`metric_list` can include any [evaluate default metrics](https://huggingface.co/evaluate-metric) or custom metrics from [hf/spaces](https://huggingface.co/spaces).
+`metrics` variable in `MetricCallback` can include any [evaluate default metrics](https://huggingface.co/evaluate-metric) or custom metrics from [hf/spaces](https://huggingface.co/spaces).
