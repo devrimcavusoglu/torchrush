@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
 
 import pytorch_lightning as pl
+import torch
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
-import torch
 
 from torchrush.utils.common import get_versions
 from torchrush.utils.torch_utils import (
@@ -121,7 +121,7 @@ class BaseModule(pl.LightningModule):
             self._optimizer = get_optimizer_by_name(optimizer_handle.name_or_object, **optimizer_handle.arguments)
         return self.optimizer
 
-    def shared_step(self, batch, batch_idx, mode="train"):
+    def shared_step(self, batch: Any, batch_idx: int, mode: str = "train") -> Dict[str, Any]:
         """
         Should return dict with key `loss`. Can optionally return keys
         `predictions` and `references` for metric calculation.
@@ -131,19 +131,19 @@ class BaseModule(pl.LightningModule):
         loss = self.compute_loss(logits, references)
         return {"loss": loss, "predictions": torch.argmax(logits, -1), "references": references}
 
-    def training_step(self, batch, batch_index):
+    def training_step(self, batch, batch_index: int) -> Dict[str, Any]:
         return self.shared_step(batch, batch_index, mode="train")
 
-    def validation_step(self, batch, batch_index):
+    def validation_step(self, batch, batch_index: int) -> Dict[str, Any]:
         return self.shared_step(batch, batch_index, mode="val")
 
-    def test_step(self, batch, batch_index):
+    def test_step(self, batch, batch_index: int) -> Dict[str, Any]:
         return self.shared_step(batch, batch_index, mode="test")
 
-    def log_any(self, any: Dict[str, Any], step: int = None):
+    def log_any(self, any: Dict[str, Any], step: int = None) -> None:
         for logger in self.loggers:
             logger.log_any(any, step)
 
-    def log_hyperparams(self):
+    def log_hyperparams(self) -> None:
         for logger in self.loggers:
             logger.log_hyperparams(self.rush_config)

@@ -60,9 +60,15 @@ Logger classes should be imported from `torchrush.loggers` and metrics should be
 from torchrush.loggers import TensorboardLogger, NeptuneLogger
 from torchrush.metrics import MetricCallback
 
-metric_callback = MetricCallback(metrics=['accuracy', 'f1', 'precision', 'recall'], log_on='epoch_end')
+metric_callback = MetricCallback(metrics=['accuracy', 'f1', 'precision', 'recall'])
 
-trainer = pl.Trainer(max_epochs=1, logger=[TensorboardLogger(), NeptuneLogger()], callbacks=[metric_callback])
+trainer = pl.Trainer(
+    max_epochs=10,
+    check_val_every_n_epoch=1,
+    val_check_interval=1.0,
+    logger=[TensorboardLogger(), NeptuneLogger()],
+    callbacks=[metric_callback]
+)
 ```
 
 `metric_list` can include any [evaluate default metrics](https://huggingface.co/evaluate-metric) or custom metrics from [hf/spaces](https://huggingface.co/spaces).

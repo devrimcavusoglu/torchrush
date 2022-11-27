@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import Optional, Tuple
 
-import torch.nn.functional as F
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 from torchrush.model.base import BaseModule
