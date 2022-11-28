@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 
 import evaluate
 import pytorch_lightning as pl
@@ -18,11 +18,11 @@ class CombinedEvaluations:
     def __init__(self, metrics: List[str]):
         self.metrics = [evaluate.load(metric) if isinstance(metric, str) else metric for metric in metrics]
 
-    def add_batch(self, predictions: Any, references: Any):
+    def add_batch(self, predictions: Any, references: Any) -> None:
         for metric in self.metrics:
             metric.add_batch(predictions=predictions, references=references)
 
-    def compute(self, labelwise=False, **kwargs):
+    def compute(self, labelwise: bool = False, **kwargs) -> Dict[str, float]:
         results = {}
 
         zero_division = kwargs.get("zero_division", 0)
@@ -46,14 +46,11 @@ class CombinedEvaluations:
 class MetricCallback(Callback):
     def __init__(
         self,
-        eval_freq: int = 1,
         metrics: List[str] = None,
         labels: List[str] = None,
         log_labelwise_metrics: bool = False,
-        log_on: str = "epoch_end",
     ):
         super().__init__()
-        self.eval_freq = eval_freq
         self.combined_evaluations = {
             "train": CombinedEvaluations(metrics),
             "val": CombinedEvaluations(metrics),
@@ -65,7 +62,6 @@ class MetricCallback(Callback):
 
         self.labels = labels
         self.log_labelwise_metrics = log_labelwise_metrics
-        self.log_on = log_on
 
     def on_train_start(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         """Log config and module summary on train start."""
@@ -76,7 +72,7 @@ class MetricCallback(Callback):
 
         pl_module.log_hyperparams()
 
-    def _accumulate_metrics(self, outputs, mode: str = "train"):
+    def _add_batch(self, outputs: Dict[str, Any], mode: str = "train") -> None:
         if mode not in ["train", "val", "test"]:
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
@@ -86,7 +82,7 @@ class MetricCallback(Callback):
                 predictions=outputs["predictions"], references=outputs["references"]
             )
 
-    def _log_metrics(self, step: int, pl_module: "pl.LightningModule", mode: str = "train"):
+    def _log_metrics(self, step: int, pl_module: "pl.LightningModule", mode: str = "train") -> None:
         if mode not in ["train", "val", "test"]:
             raise ValueError("`mode` must be one of {'train', 'val', 'test'}.")
 
@@ -112,64 +108,52 @@ class MetricCallback(Callback):
                     )
         self._last_val_result = result
 
+    def _should_log_metrics(self, trainer: "pl.Trainer") -> bool:
+        return not trainer.sanity_checking and trainer.fit_loop.epoch_loop._should_check_val_fx()
+
     def on_train_batch_end(
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs,
-        batch,
+        outputs: Dict[str, Any],
+        batch: Any,
         batch_idx: int,
     ) -> None:
-        # accumulate metrics
-        self._accumulate_metrics(outputs, mode="train")
+        self._add_batch(outputs, mode="train")
 
         # log metrics
-        pl_module.log_any({"train/loss": outputs["loss"].item()}, step=batch_idx)
-        if batch_idx % self.eval_freq == 0 and self.log_on == "batch_end":
+        pl_module.log_any({"train/loss": outputs["loss"]}, step=batch_idx)
+        if self._should_log_metrics(trainer):
             self._log_metrics(batch_idx, pl_module, mode="train")
 
     def on_validation_batch_end(
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs,
-        batch,
+        outputs: Dict[str, Any],
+        batch: Any,
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
-        # accumulate metrics
-        self._accumulate_metrics(outputs, mode="val")
+        self._add_batch(outputs, mode="val")
 
         # log metrics
-        pl_module.log_any({"val/loss": outputs["loss"].item()}, step=batch_idx)
-        if batch_idx % self.eval_freq == 0 and self.log_on == "batch_end":
+        pl_module.log_any({"val/loss": outputs["loss"]}, step=batch_idx)
+        if self._should_log_metrics(trainer):
             self._log_metrics(batch_idx, pl_module, mode="val")
 
     def on_test_batch_end(
         self,
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
-        outputs,
-        batch,
+        outputs: Dict[str, Any],
+        batch: Any,
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
-        # accumulate metrics
-        self._accumulate_metrics(outputs, mode="test")
+        self._add_batch(outputs, mode="test")
 
         # log metrics
-        pl_module.log_any({"test/loss": outputs["loss"].item()}, step=batch_idx)
-        if batch_idx % self.eval_freq == 0 and self.log_on == "batch_end":
+        pl_module.log_any({"test/loss": outputs["loss"]}, step=batch_idx)
+        if self._should_log_metrics(trainer):
             self._log_metrics(batch_idx, pl_module, mode="test")
-
-    def on_train_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        if self.log_on == "epoch_end" and trainer.current_epoch % self.eval_freq == 0:
-            self._log_metrics(trainer.current_epoch, pl_module, mode="train")
-
-    def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        if self.log_on == "epoch_end" and trainer.current_epoch % self.eval_freq == 0:
-            self._log_metrics(trainer.current_epoch, pl_module, mode="val")
-
-    def on_test_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        if self.log_on == "epoch_end":
-            self._log_metrics(trainer.current_epoch, pl_module, mode="test")
