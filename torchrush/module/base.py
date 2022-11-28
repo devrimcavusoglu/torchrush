@@ -1,12 +1,13 @@
 import warnings
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Iterator, Optional, Tuple, Union, final
 
 import pytorch_lightning as pl
+import torch
+from torch.nn import Parameter
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
-import torch
 
 from torchrush.utils.common import get_versions
 from torchrush.utils.torch_utils import (
@@ -25,7 +26,18 @@ class ArgumentHandler:
 
 
 class BaseModule(pl.LightningModule):
-    def __init__(self, optimizer: Union[str, TorchOptimizer], criterion: Union[str, TorchLoss] = None, **kwargs):
+    r"""
+    BaseModule of Rush extending pl.LightningModule. This is the base module one should
+    extend for own use cases. You can combine
+    """
+
+    def __init__(
+        self,
+        *args,
+        optimizer: Optional[Union[str, TorchOptimizer]] = None,
+        criterion: Optional[Union[str, TorchLoss]] = None,
+        **kwargs,
+    ):
         super(BaseModule, self).__init__()
         self._criterion = None
         self._optimizer = None
@@ -37,10 +49,9 @@ class BaseModule(pl.LightningModule):
             "versions": get_versions(),
             **kwargs,
         }
-        self._init_model(**kwargs)
+        self._init_model(*args, **kwargs)
 
-    @abstractmethod
-    def _init_model(self, **kwargs):
+    def _init_model(self, *args, **kwargs):
         pass
 
     @property
@@ -76,8 +87,7 @@ class BaseModule(pl.LightningModule):
             if not isinstance(criterion, TorchLoss):
                 warnings.warn(
                     f"To be automatically constructed `criterion` is expected to be a string or an instance of "
-                    f"`torch.nn.modules.loss._Loss`, got "
-                    f"`{type(criterion)}`. You need to explicitly define "
+                    f"`torch.nn.modules.loss._Loss`, got `{type(criterion)}`. You need to explicitly define "
                     f"the loss computation logic in `compute_loss()`."
                 )
             criterion_args = {}
@@ -88,9 +98,12 @@ class BaseModule(pl.LightningModule):
             if optimizer_args is None:
                 optimizer_args = {}
             optimizer_is_object = False
-        elif not isinstance(criterion, TorchOptimizer):
-            raise ValueError(f"Expecting `str` or `torch.optim.Optimizer` object, got " f"`{type(optimizer)}`.")
         else:
+            if not isinstance(optimizer, TorchOptimizer):
+                warnings.warn(
+                    f"To be automatically constructed `optimizer` is expected to be a string or an instance of "
+                    f"`torch.optim.Optimizer`, got `{type(optimizer)}`."
+                )
             optimizer_args = {}
             optimizer_is_object = True
 
@@ -100,14 +113,28 @@ class BaseModule(pl.LightningModule):
         )
 
     @abstractmethod
-    def compute_loss(self, y_pred, y_true):
-        pass
-
-    @abstractmethod
     def forward(self, x):
         pass
 
-    def configure_optimizers(self):
+    def compute_loss(self, y_pred, y_true):
+        """
+        Loss computation logic required for training.
+        """
+        raise NotImplementedError("`compute_loss` is not implemented, required for training.")
+
+    def params_to_optimize(self) -> Iterator[Parameter]:
+        """
+        This method determines the parameters to be optimized, which sets up the optimizer in
+        a way to update all parameters of the module by default. One must override this method to set up
+        optimizer in other use cases (i.e. training/optimizing only few of the layers/layer blocks).
+
+        Returns:
+            Returns `torch.nn.Parameter`.
+        """
+        return self.parameters()
+
+    @final
+    def configure_optimizers(self) -> Optional[torch.optim.Optimizer]:
         criterion_handle = self._criterion_handle
         optimizer_handle = self._optimizer_handle
         if criterion_handle.is_object:
@@ -117,7 +144,7 @@ class BaseModule(pl.LightningModule):
         if optimizer_handle.is_object:
             self._optimizer = optimizer_handle.name_or_object
         else:
-            optimizer_handle.arguments["params"] = self.parameters()
+            optimizer_handle.arguments["params"] = self.params_to_optimize()
             self._optimizer = get_optimizer_by_name(optimizer_handle.name_or_object, **optimizer_handle.arguments)
         return self.optimizer
 
@@ -131,8 +158,14 @@ class BaseModule(pl.LightningModule):
         loss = self.compute_loss(logits, references)
         return {"loss": loss, "predictions": torch.argmax(logits, -1), "references": references}
 
-    def training_step(self, batch, batch_index):
+    def _training_step(self, batch, batch_index):
         return self.shared_step(batch, batch_index, mode="train")
+
+    @final
+    def training_step(self, batch, batch_index):
+        if self.criterion is None or self.optimizer is None:
+            raise AttributeError("'criterion' and 'optimizer' cannot be None for training process.")
+        return self._training_step(batch, batch_index)
 
     def validation_step(self, batch, batch_index):
         return self.shared_step(batch, batch_index, mode="val")

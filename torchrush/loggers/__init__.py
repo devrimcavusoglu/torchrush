@@ -1,12 +1,10 @@
 from typing import Any, Dict, Optional
 
-from pytorch_lightning.loggers import (
-    CSVLogger as pl_CSVLogger,
-    MLFlowLogger as pl_MLFlowLogger,
-    NeptuneLogger as pl_NeptuneLogger,
-    TensorBoardLogger as pl_TensorBoardLogger,
-    WandbLogger as pl_WandbLogger,
-)
+from pytorch_lightning.loggers import CSVLogger as pl_CSVLogger
+from pytorch_lightning.loggers import MLFlowLogger as pl_MLFlowLogger
+from pytorch_lightning.loggers import NeptuneLogger as pl_NeptuneLogger
+from pytorch_lightning.loggers import TensorBoardLogger as pl_TensorBoardLogger
+from pytorch_lightning.loggers import WandbLogger as pl_WandbLogger
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
 

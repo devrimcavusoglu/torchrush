@@ -3,15 +3,15 @@ from unittest.mock import MagicMock
 
 import pytest
 import pytorch_lightning as pl
+import torch
 from pytorch_lightning.callbacks import Callback
 
 from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset
 from torchrush.loggers import TensorBoardLogger
 from torchrush.metrics import CombinedEvaluations, MetricCallback
-from torchrush.model.base import BaseModule
-from torchrush.model.lenet5 import LeNetForClassification
-import torch
+from torchrush.module.base import BaseModule
+from torchrush.module.lenet5 import LeNetForClassification
 
 TEMP_LOG_DIR = "temp_log_dir"
 
