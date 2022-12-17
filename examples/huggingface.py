@@ -7,7 +7,7 @@ from transformers import AutoModelForVideoClassification, AutoProcessor, PreTrai
 from torchrush.module.base import BaseModule
 
 
-class HFModelForVideoCLassification(BaseModule):
+class HFModelForVideoClassification(BaseModule):
     def _init_model(self, hf_model_id: str, **kwargs):
         self.model = AutoModelForVideoClassification.from_pretrained(hf_model_id, **kwargs)
         self.processor = AutoProcessor.from_pretrained(hf_model_id, **kwargs)
@@ -31,7 +31,7 @@ class HFModelForVideoCLassification(BaseModule):
 if __name__ == "__main__":
     # init rush huggingface model
     hf_model_id = "facebook/timesformer-base-finetuned-k400"
-    rush_hf_model = HFModelForVideoCLassification(hf_model_id=hf_model_id)
+    rush_hf_model = HFModelForVideoClassification(hf_model_id=hf_model_id)
 
     # export in huggingface format
     save_dir = "examples/huggingface"
@@ -42,9 +42,9 @@ if __name__ == "__main__":
     rush_hf_model.save_pretrained(save_directory=save_dir)
 
     # load from exported rush format
-    rush_hf_model = HFModelForVideoCLassification.from_pretrained(save_dir)
+    rush_hf_model = HFModelForVideoClassification.from_pretrained(save_dir)
 
     # load in auto rush style
     from torchrush.module.auto import AutoRush
 
-    rushmodule = AutoRush.from_pretrained(save_dir, class_name="HFModelForVideoCLassification")
+    rushmodule = AutoRush.from_pretrained(save_dir, class_name="HFModelForVideoClassification")
