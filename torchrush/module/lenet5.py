@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from torchrush.model.base import BaseModule
+from torchrush.module.base import BaseModule
 
 
 class LeNet(BaseModule):

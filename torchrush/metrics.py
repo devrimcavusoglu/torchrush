@@ -64,7 +64,7 @@ class MetricCallback(Callback):
         self.log_labelwise_metrics = log_labelwise_metrics
 
     def on_train_start(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        """Log config and model summary on train start."""
+        """Log config and module summary on train start."""
         model_summary = summarize(pl_module)
         pl_module.log_any({"model_stats/size": model_summary.model_size})
         pl_module.log_any({"model_stats/total_parameters": model_summary.total_parameters})

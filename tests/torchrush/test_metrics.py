@@ -10,8 +10,8 @@ from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset
 from torchrush.loggers import TensorBoardLogger
 from torchrush.metrics import CombinedEvaluations, MetricCallback
-from torchrush.model.base import BaseModule
-from torchrush.model.lenet5 import LeNetForClassification
+from torchrush.module.base import BaseModule
+from torchrush.module.lenet5 import LeNetForClassification
 
 TEMP_LOG_DIR = "temp_log_dir"
 

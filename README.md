@@ -24,18 +24,17 @@ import pytorch_lightning as pl
 
 from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset
-from torchrush.model.lenet5 import LeNetForClassification
-
+from torchrush.module.lenet5 import LeNetForClassification
 
 # Prepare datasets
 train_loader = DataLoader.from_datasets(
-        "mnist", split="train", constructor=GenericImageClassificationDataset, batch_size=32
+		"mnist", split="train", constructor=GenericImageClassificationDataset, batch_size=32
 )
 val_loader = DataLoader.from_datasets(
-    "mnist", split="test", constructor=GenericImageClassificationDataset, batch_size=32
+		"mnist", split="test", constructor=GenericImageClassificationDataset, batch_size=32
 )
 
-# Set model
+# Set module
 model = LeNetForClassification(criterion="CrossEntropyLoss", optimizer="SGD", input_size=(28, 28, 1), lr=0.01)
 
 # Train
