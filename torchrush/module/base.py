@@ -1,10 +1,17 @@
+import json
+import logging
+import os
+import shutil
 import warnings
 from abc import abstractmethod
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Tuple, Union, final
 
 import pytorch_lightning as pl
+import requests
 import torch
+from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
 from torch.nn import Parameter
 from torch.nn.modules.loss import _Loss as TorchLoss
 from torch.optim import Optimizer as TorchOptimizer
@@ -17,6 +24,12 @@ from torchrush.utils.torch_utils import (
     get_optimizer_by_name,
 )
 
+RUSH_WEIGHTS_NAME = "rushmodel.bin"
+RUSH_CONFIG_NAME = "rushconfig.json"
+RUSH_FILE_NAME = "rush.py"
+
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class ArgumentHandler:
@@ -25,7 +38,7 @@ class ArgumentHandler:
     is_object: bool = False
 
 
-class BaseModule(pl.LightningModule):
+class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
     r"""
     BaseModule of Rush extending pl.LightningModule. This is the base module one should
     extend for own use cases. You can combine
@@ -43,12 +56,21 @@ class BaseModule(pl.LightningModule):
         self._optimizer = None
         self._criterion_handle, self._optimizer_handle = self.setup_components(criterion, optimizer, **kwargs)
         kwargs = self._clean_kwargs(**kwargs)
+        if optimizer is not None and not isinstance(optimizer, str):
+            optimizer = optimizer.__class__.__name__
+        if criterion is not None and not isinstance(criterion, str):
+            criterion = criterion.__class__.__name__
+
         self._rush_config = {
-            "optimizer": optimizer if isinstance(optimizer, str) else optimizer.__class__.__name__,
-            "criterion": criterion if isinstance(criterion, str) else criterion.__class__.__name__,
+            "optimizer": optimizer,
+            "criterion": criterion,
             "versions": get_versions(),
             **kwargs,
         }
+
+        if "versions" in kwargs:
+            kwargs.pop("versions")
+
         self._init_model(*args, **kwargs)
 
     def _init_model(self, *args, **kwargs):
@@ -180,3 +202,195 @@ class BaseModule(pl.LightningModule):
     def log_hyperparams(self) -> None:
         for logger in self.loggers:
             logger.log_hyperparams(self.rush_config)
+
+    def _save_pretrained(self, save_directory):
+        """
+        Overwrite this method if you wish to save specific layers instead of the
+        complete model.
+        """
+        import torch
+
+        # saving model
+        path = os.path.join(save_directory, RUSH_WEIGHTS_NAME)
+        torch.save(self.state_dict(), path)
+
+        # saving config
+        path = os.path.join(save_directory, RUSH_CONFIG_NAME)
+        with open(path, "w") as f:
+            json.dump(self._rush_config, f)
+
+        # saving rush file
+        import importlib
+
+        subclass = importlib.import_module(self.__module__)
+        subclass_file_path = os.path.realpath(subclass.__file__)
+        target_file_path = os.path.join(save_directory, RUSH_FILE_NAME)
+        shutil.copy(subclass_file_path, target_file_path)
+
+    @classmethod
+    def _from_pretrained(
+        cls,
+        model_id,
+        revision,
+        cache_dir,
+        force_download,
+        proxies,
+        resume_download,
+        local_files_only,
+        token,
+        map_location="cpu",
+        strict=False,
+        **model_kwargs,
+    ):
+        """
+        Overwrite this method to initialize your model in a different way.
+        """
+        import os
+
+        import torch
+        from huggingface_hub import hf_hub_download
+
+        map_location = torch.device(map_location)
+
+        if os.path.isdir(model_id):
+            print("Loading weights from local directory")
+            model_file = os.path.join(model_id, RUSH_WEIGHTS_NAME)
+        else:
+            model_file = hf_hub_download(
+                repo_id=model_id,
+                filename=RUSH_WEIGHTS_NAME,
+                revision=revision,
+                cache_dir=cache_dir,
+                force_download=force_download,
+                proxies=proxies,
+                resume_download=resume_download,
+                token=token,
+                local_files_only=local_files_only,
+            )
+        model = cls(**model_kwargs)
+
+        state_dict = torch.load(model_file, map_location=map_location)
+        model.load_state_dict(state_dict, strict=strict)
+        model.eval()
+
+        return model
+
+    @classmethod
+    def from_pretrained(
+        cls,
+        pretrained_model_name_or_path: str,
+        force_download: bool = False,
+        resume_download: bool = False,
+        proxies: Optional[Dict] = None,
+        token: Optional[Union[str, bool]] = None,
+        cache_dir: Optional[str] = None,
+        local_files_only: bool = False,
+        **model_kwargs,
+    ):
+        r"""
+        Download and instantiate a model from the Hugging Face Hub.
+
+                Parameters:
+                    pretrained_model_name_or_path (`str` or `os.PathLike`):
+                        Can be either:
+                            - A string, the `model id` of a pretrained model
+                              hosted inside a model repo on huggingface.co.
+                              Valid model ids can be located at the root-level,
+                              like `bert-base-uncased`, or namespaced under a
+                              user or organization name, like
+                              `dbmdz/bert-base-german-cased`.
+                            - You can add `revision` by appending `@` at the end
+                              of model_id simply like this:
+                              `dbmdz/bert-base-german-cased@main` Revision is
+                              the specific model version to use. It can be a
+                              branch name, a tag name, or a commit id, since we
+                              use a git-based system for storing models and
+                              other artifacts on huggingface.co, so `revision`
+                              can be any identifier allowed by git.
+                            - A path to a `directory` containing model weights
+                              saved using
+                              [`~transformers.PreTrainedModel.save_pretrained`],
+                              e.g., `./my_model_directory/`.
+                            - `None` if you are both providing the configuration
+                              and state dictionary (resp. with keyword arguments
+                              `config` and `state_dict`).
+                    force_download (`bool`, *optional*, defaults to `False`):
+                        Whether to force the (re-)download of the model weights
+                        and configuration files, overriding the cached versions
+                        if they exist.
+                    resume_download (`bool`, *optional*, defaults to `False`):
+                        Whether to delete incompletely received files. Will
+                        attempt to resume the download if such a file exists.
+                    proxies (`Dict[str, str]`, *optional*):
+                        A dictionary of proxy servers to use by protocol or
+                        endpoint, e.g., `{'http': 'foo.bar:3128',
+                        'http://hostname': 'foo.bar:4012'}`. The proxies are
+                        used on each request.
+                    token (`str` or `bool`, *optional*):
+                        The token to use as HTTP bearer authorization for remote
+                        files. If `True`, will use the token generated when
+                        running `transformers-cli login` (stored in
+                        `~/.huggingface`).
+                    cache_dir (`Union[str, os.PathLike]`, *optional*):
+                        Path to a directory in which a downloaded pretrained
+                        model configuration should be cached if the standard
+                        cache should not be used.
+                    local_files_only(`bool`, *optional*, defaults to `False`):
+                        Whether to only look at local files (i.e., do not try to
+                        download the model).
+                    model_kwargs (`Dict`, *optional*):
+                        model_kwargs will be passed to the model during
+                        initialization
+
+                <Tip>
+
+                Passing `token=True` is required when you want to use a
+                private model.
+
+                </Tip>
+        """
+
+        model_id = pretrained_model_name_or_path
+
+        revision = None
+        if len(model_id.split("@")) == 2:
+            model_id, revision = model_id.split("@")
+
+        config_file: Optional[str] = None
+        if os.path.isdir(model_id):
+            if RUSH_CONFIG_NAME in os.listdir(model_id):
+                config_file = os.path.join(model_id, RUSH_CONFIG_NAME)
+            else:
+                logger.warning(f"{RUSH_CONFIG_NAME} not found in {Path(model_id).resolve()}")
+        else:
+            try:
+                config_file = hf_hub_download(
+                    repo_id=model_id,
+                    filename=RUSH_CONFIG_NAME,
+                    revision=revision,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    proxies=proxies,
+                    resume_download=resume_download,
+                    token=token,
+                    local_files_only=local_files_only,
+                )
+            except requests.exceptions.RequestException:
+                logger.warning(f"{RUSH_CONFIG_NAME} not found in HuggingFace Hub")
+
+        if config_file is not None:
+            with open(config_file, "r", encoding="utf-8") as f:
+                config = json.load(f)
+            model_kwargs.update(config)
+
+        return cls._from_pretrained(
+            model_id,
+            revision,
+            cache_dir,
+            force_download,
+            proxies,
+            resume_download,
+            local_files_only,
+            token,
+            **model_kwargs,
+        )

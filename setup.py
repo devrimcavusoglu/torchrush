@@ -33,6 +33,7 @@ _DEV_REQUIREMENTS = [
     "pytest-cov>=3.0.0",
     "pytest-timeout>=2.1.0",
     "scikit-learn>=1.1.3,<1.2.0",
+    "git+https://github.com/huggingface/transformers.git@7032e0203262ebb2ebf55da8d2e01f873973e835",
 ]
 
 extras = {
