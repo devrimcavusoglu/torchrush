@@ -19,7 +19,9 @@ TEMP_LOG_DIR = "temp_log_dir"
 class CallbackForTestingTrainer(Callback):
     losses = []
 
-    def on_train_batch_end(self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int) -> None:
+    def on_train_batch_end(
+        self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int
+    ) -> None:
         if batch_idx % 39 == 0:
             x, y = batch
             model_out = pl_module(x)
@@ -30,7 +32,9 @@ class CallbackForTestingTrainer(Callback):
 @pytest.fixture
 def rush_model():
     pl.seed_everything(42)
-    return LeNetForClassification(optimizer="SGD", criterion="CrossEntropyLoss", input_size=(28, 28, 1), lr=0.01)
+    return LeNetForClassification(
+        optimizer="SGD", criterion="CrossEntropyLoss", input_size=(28, 28, 1), lr=0.01
+    )
 
 
 @pytest.fixture
@@ -89,7 +93,9 @@ def batch_step_outputs():
 def prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger):
     # attach dataloaders and model to trainer
     train_loader, val_loader = data_loaders
-    pl_trainer._data_connector.attach_data(rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+    pl_trainer._data_connector.attach_data(
+        rush_model, train_dataloaders=train_loader, val_dataloaders=val_loader
+    )
     pl_trainer.reset_train_dataloader(rush_model)
     pl_trainer.reset_val_dataloader(rush_model)
     pl_trainer.strategy._lightning_module = rush_model
@@ -103,7 +109,9 @@ def prepare_trainer_state(pl_trainer, rush_model, data_loaders, mock_logger):
 def pl_trainer_on_train_batch_end(rush_model, mock_logger, data_loaders):
     val_check_interval = 33
 
-    metric_callback = MetricCallback(metrics=["accuracy", "f1", "precision", "recall"], log_labelwise_metrics=False)
+    metric_callback = MetricCallback(
+        metrics=["accuracy", "f1", "precision", "recall"], log_labelwise_metrics=False
+    )
     metric_callback.combined_evaluations = MagicMock()
 
     pl_trainer = pl.Trainer(
@@ -128,7 +136,9 @@ def pl_trainer_on_train_batch_end(rush_model, mock_logger, data_loaders):
 def pl_trainer_on_val_batch_with_mock_combined_evaluations(rush_model, mock_logger, data_loaders):
     val_check_interval = 33
 
-    metric_callback = MetricCallback(metrics=["accuracy", "f1", "precision", "recall"], log_labelwise_metrics=False)
+    metric_callback = MetricCallback(
+        metrics=["accuracy", "f1", "precision", "recall"], log_labelwise_metrics=False
+    )
     metric_callback.combined_evaluations = MagicMock()
 
     pl_trainer = pl.Trainer(
@@ -153,7 +163,9 @@ def pl_trainer_on_val_batch_with_mock_combined_evaluations(rush_model, mock_logg
 def pl_trainer_on_val_batch_with_mock_metrics(rush_model, mock_logger, data_loaders):
     val_check_interval = 33
 
-    metric_callback = MetricCallback(metrics=["accuracy", "f1", "precision", "recall"], log_labelwise_metrics=False)
+    metric_callback = MetricCallback(
+        metrics=["accuracy", "f1", "precision", "recall"], log_labelwise_metrics=False
+    )
     metric_callback.combined_evaluations["val"].metrics = [MagicMock(), MagicMock()]
     metric_callback.combined_evaluations["val"].metrics[0].name = "accuracy"
     metric_callback.combined_evaluations["val"].metrics[1].name = "f1"
@@ -286,7 +298,9 @@ def test_rushmetrics_callback_val_batch_end(
     # scenario 2: batch_end + val
     pl_trainer, batch_idx, metric_callback = pl_trainer_on_val_batch_with_mock_metrics
 
-    metric_callback.on_validation_batch_end(pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0)
+    metric_callback.on_validation_batch_end(
+        pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0
+    )
     metric_callback.combined_evaluations["val"].metrics[0].compute.assert_called_with()
     metric_callback.combined_evaluations["val"].metrics[1].compute.assert_called_with(average="macro")
     mock_logger.log_any.assert_called_with({"val/loss": batch_step_outputs["loss"]}, batch_idx)
@@ -310,7 +324,9 @@ def test_rushmetrics_callback_val_epoch_end_labelwise(
     # scenario 4: labelwise + epoch_end + validation
     pl_trainer, batch_idx, metric_callback = pl_trainer_on_val_epoch_with_labelwise_metric_callback
 
-    metric_callback.on_validation_batch_end(pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0)
+    metric_callback.on_validation_batch_end(
+        pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0
+    )
     metric_callback.on_validation_epoch_end(pl_trainer, rush_model)
     mock_logger.log_any.assert_called_with({"val/recall_1": 0.6666666666666666}, batch_idx)
 
@@ -321,7 +337,9 @@ def test_pltrainer_trains_with_rushmetrics(rush_model, data_loaders):
     metric_callback = MetricCallback(metrics=["accuracy", "f1", "precision", "recall"])
 
     train_loader, val_loader = data_loaders
-    pl_trainer = pl.Trainer(enable_checkpointing=False, max_steps=20, logger=tb_logger, callbacks=[metric_callback])
+    pl_trainer = pl.Trainer(
+        enable_checkpointing=False, max_steps=20, logger=tb_logger, callbacks=[metric_callback]
+    )
     pl_trainer.fit(rush_model, train_loader, val_loader)
 
     # remove the temp dir
@@ -339,7 +357,9 @@ def test_pltrainer_trains_with_rushmetrics_labelwise(rush_model, data_loaders):
         labels=train_loader.dataset._dataset.features["label"].names,
     )
 
-    pl_trainer = pl.Trainer(enable_checkpointing=False, max_steps=20, logger=tb_logger, callbacks=[metric_callback])
+    pl_trainer = pl.Trainer(
+        enable_checkpointing=False, max_steps=20, logger=tb_logger, callbacks=[metric_callback]
+    )
     pl_trainer.fit(rush_model, train_loader, val_loader)
 
     # remove the temp dir

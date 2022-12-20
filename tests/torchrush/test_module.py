@@ -30,13 +30,16 @@ def test_module_construction_for_prediction(data_loaders):
 
 
 @pytest.mark.parametrize(
-    ("optimizer", "criterion"), [(None, None), ("SGD", None), (None, "CrossEntropyLoss"), ("SGD", "CrossEntropyLoss")]
+    ("optimizer", "criterion"),
+    [(None, None), ("SGD", None), (None, "CrossEntropyLoss"), ("SGD", "CrossEntropyLoss")],
 )
 def test_module_construction_for_training(optimizer, criterion, data_loaders, trainer):
     train_loader, test_loader = data_loaders
     if optimizer:
         # lr is a required param when optimizer is given.
-        model = DeepFFN10Classifier(input_size=(1, 28, 28), optimizer=optimizer, criterion=criterion, lr=0.01)
+        model = DeepFFN10Classifier(
+            input_size=(1, 28, 28), optimizer=optimizer, criterion=criterion, lr=0.01
+        )
     else:
         model = DeepFFN10Classifier(input_size=(1, 28, 28), optimizer=optimizer, criterion=criterion)
     if criterion is None:  # Because of validation sanity check of pl.Trainer
