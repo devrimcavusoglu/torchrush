@@ -292,7 +292,7 @@ def test_rushmetrics_callback_train_batch_end(
     mock_logger.log_any.assert_called_with({"train/loss": batch_step_outputs["loss"]}, batch_idx)
 
 
-def test_rushmetrics_callback_val_batch_end(
+def test_rushmetrics_callback_val_steps(
     rush_model, mock_logger, batch_step_outputs, pl_trainer_on_val_batch_with_mock_metrics
 ):
     # scenario 2: batch_end + val
@@ -301,9 +301,11 @@ def test_rushmetrics_callback_val_batch_end(
     metric_callback.on_validation_batch_end(
         pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0
     )
+    metric_callback.combined_evaluations["val"].metrics[0].add_batch.assert_called()
+    metric_callback.on_validation_end(pl_trainer, rush_model)
     metric_callback.combined_evaluations["val"].metrics[0].compute.assert_called_with()
     metric_callback.combined_evaluations["val"].metrics[1].compute.assert_called_with(average="macro")
-    mock_logger.log_any.assert_called_with({"val/loss": batch_step_outputs["loss"]}, batch_idx)
+    mock_logger.log_any.assert_called_with({"val/loss": batch_step_outputs["loss"]}, 0)
 
 
 def test_rushmetrics_callback_test_batch_end_labelwise(
@@ -313,9 +315,12 @@ def test_rushmetrics_callback_test_batch_end_labelwise(
     pl_trainer, batch_idx, metric_callback = pl_trainer_on_val_batch_with_labelwise_mock_metrics
 
     metric_callback.on_test_batch_end(pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0)
+    metric_callback.combined_evaluations["test"].metrics[0].add_batch.assert_called()
+
+    metric_callback.on_test_end(pl_trainer, rush_model)
     metric_callback.combined_evaluations["test"].metrics[0].compute.assert_called_with()
     metric_callback.combined_evaluations["test"].metrics[1].compute.assert_called_with(average=None)
-    mock_logger.log_any.assert_called_with({"test/loss": batch_step_outputs["loss"]}, batch_idx)
+    mock_logger.log_any.assert_called_with({"test/loss": batch_step_outputs["loss"]}, 0)
 
 
 def test_rushmetrics_callback_val_epoch_end_labelwise(
@@ -327,8 +332,9 @@ def test_rushmetrics_callback_val_epoch_end_labelwise(
     metric_callback.on_validation_batch_end(
         pl_trainer, rush_model, batch_step_outputs, None, batch_idx, 0
     )
+    metric_callback.on_validation_end(pl_trainer, rush_model)
     metric_callback.on_validation_epoch_end(pl_trainer, rush_model)
-    mock_logger.log_any.assert_called_with({"val/recall_1": 0.6666666666666666}, batch_idx)
+    mock_logger.log_any.assert_called_with({"val/recall_1": 0.6666666666666666}, 0)
 
 
 def test_pltrainer_trains_with_rushmetrics(rush_model, data_loaders):

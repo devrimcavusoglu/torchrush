@@ -8,7 +8,7 @@ from torchrush.module.deep_ffn10 import DeepFFN10Classifier
 
 @pytest.fixture
 def trainer():
-    return pl.Trainer(enable_checkpointing=False, max_steps=200)
+    return pl.Trainer(enable_checkpointing=False, max_steps=10)
 
 
 @pytest.fixture(scope="function")
@@ -43,10 +43,10 @@ def test_module_construction_for_training(optimizer, criterion, data_loaders, tr
     else:
         model = DeepFFN10Classifier(input_size=(1, 28, 28), optimizer=optimizer, criterion=criterion)
     if criterion is None:  # Because of validation sanity check of pl.Trainer
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             trainer.fit(model, train_loader, test_loader)
     elif optimizer is None:
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             trainer.fit(model, train_loader, test_loader)
     else:
         trainer.fit(model, train_loader, test_loader)

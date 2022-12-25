@@ -156,12 +156,16 @@ class BaseModule(pl.LightningModule):
         criterion_handle = self._criterion_handle
         optimizer_handle = self._optimizer_handle
         if criterion_handle.is_object:
+            if criterion_handle.name_or_object == "":
+                raise ValueError("'criterion' is not defined.")
             self._criterion = criterion_handle.name_or_object
         else:
             self._criterion = get_criterion_by_name(
                 criterion_handle.name_or_object, **criterion_handle.arguments
             )
         if optimizer_handle.is_object:
+            if optimizer_handle.name_or_object == "":
+                raise ValueError("'optimizer' is not defined.")
             self._optimizer = optimizer_handle.name_or_object
         else:
             optimizer_handle.arguments["params"] = self.params_to_optimize()
