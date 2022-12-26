@@ -16,7 +16,9 @@ LABELWISE_SUPPORTED_METRICS = [
 class CombinedEvaluations:
     # place holder for evaluate.combine till https://github.com/huggingface/evaluate/issues/234 is fixed
     def __init__(self, metrics: List[str]):
-        self.metrics = [evaluate.load(metric) if isinstance(metric, str) else metric for metric in metrics]
+        self.metrics = [
+            evaluate.load(metric) if isinstance(metric, str) else metric for metric in metrics
+        ]
 
     def add_batch(self, predictions: Any, references: Any) -> None:
         for metric in self.metrics:
@@ -62,6 +64,9 @@ class MetricCallback(Callback):
 
         self.labels = labels
         self.log_labelwise_metrics = log_labelwise_metrics
+        self._test_loss = []
+        self._val_loss = []
+        self._last_train_step = 0
 
     def on_train_start(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         """Log config and module summary on train start."""
@@ -81,6 +86,22 @@ class MetricCallback(Callback):
             self.combined_evaluations[mode].add_batch(
                 predictions=outputs["predictions"], references=outputs["references"]
             )
+        loss = outputs["loss"]
+        if mode == "val":
+            self._val_loss.append(loss)
+        elif mode == "test":
+            self._test_loss.append(loss)
+
+    def _compute_loss(self, mode: str = "val") -> float:
+        if mode == "val":
+            avg_loss = sum(self._val_loss) / len(self._val_loss)
+            self._val_loss = []
+        elif mode == "test":
+            avg_loss = sum(self._test_loss) / len(self._test_loss)
+            self._test_loss = []
+        else:
+            raise ValueError("Train losses are not aggregated.")
+        return avg_loss
 
     def _log_metrics(self, step: int, pl_module: "pl.LightningModule", mode: str = "train") -> None:
         if mode not in ["train", "val", "test"]:
@@ -121,10 +142,13 @@ class MetricCallback(Callback):
     ) -> None:
         self._add_batch(outputs, mode="train")
 
+        idx = trainer.current_epoch * trainer.num_training_batches + batch_idx
+
         # log metrics
-        pl_module.log_any({"train/loss": outputs["loss"]}, step=batch_idx)
+        pl_module.log_any({"train/loss": outputs["loss"]}, step=idx)
         if self._should_log_metrics(trainer):
-            self._log_metrics(batch_idx, pl_module, mode="train")
+            self._log_metrics(idx, pl_module, mode="train")
+        self._last_train_step = idx
 
     def on_validation_batch_end(
         self,
@@ -137,11 +161,6 @@ class MetricCallback(Callback):
     ) -> None:
         self._add_batch(outputs, mode="val")
 
-        # log metrics
-        pl_module.log_any({"val/loss": outputs["loss"]}, step=batch_idx)
-        if self._should_log_metrics(trainer):
-            self._log_metrics(batch_idx, pl_module, mode="val")
-
     def on_test_batch_end(
         self,
         trainer: "pl.Trainer",
@@ -153,7 +172,15 @@ class MetricCallback(Callback):
     ) -> None:
         self._add_batch(outputs, mode="test")
 
+    def on_evaluation_end(self, trainer, pl_module: "pl.LightningModule", mode: str = "val") -> None:
+        avg_eval_loss = self._compute_loss(mode)
         # log metrics
-        pl_module.log_any({"test/loss": outputs["loss"]}, step=batch_idx)
+        pl_module.log_any({f"{mode}/loss": avg_eval_loss}, step=self._last_train_step)
         if self._should_log_metrics(trainer):
-            self._log_metrics(batch_idx, pl_module, mode="test")
+            self._log_metrics(self._last_train_step, pl_module, mode=mode)
+
+    def on_validation_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
+        self.on_evaluation_end(trainer, pl_module, mode="val")
+
+    def on_test_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
+        self.on_evaluation_end(trainer, pl_module, mode="test")

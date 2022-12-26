@@ -11,7 +11,9 @@ from torchrush.module.lenet5 import LeNetForClassification
 class CallbackForTestingTrainer(Callback):
     losses = []
 
-    def on_train_batch_end(self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int) -> None:
+    def on_train_batch_end(
+        self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int
+    ) -> None:
         if batch_idx % 39 == 0:
             x, y = batch
             model_out = pl_module(x)
@@ -27,7 +29,9 @@ def loss_callback():
 @pytest.fixture(scope="function")
 def rush_model():
     pl.seed_everything(42)
-    return LeNetForClassification(optimizer="SGD", criterion="CrossEntropyLoss", input_size=(28, 28, 1), lr=0.01)
+    return LeNetForClassification(
+        optimizer="SGD", criterion="CrossEntropyLoss", input_size=(28, 28, 1), lr=0.01
+    )
 
 
 @pytest.fixture(scope="function")

@@ -67,7 +67,10 @@ class LeNet(BaseModule):
 
 class LeNetForClassification(LeNet):
     def _init_model(
-        self, input_size: Optional[Tuple] = None, embedding_size: Optional[int] = 84, output_size: Optional[int] = 10
+        self,
+        input_size: Optional[Tuple] = None,
+        embedding_size: Optional[int] = 84,
+        output_size: Optional[int] = 10,
     ):
         super(LeNetForClassification, self)._init_model(input_size, embedding_size)
         self.output_size = output_size
