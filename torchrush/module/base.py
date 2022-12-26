@@ -37,6 +37,10 @@ class ArgumentHandler:
     arguments: Dict[str, Any] = None
     is_object: bool = False
 
+    def __post_init__(self):
+        # in case of None set empty str
+        self.name_or_object = self.name_or_object or ""
+
 
 class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
     r"""
@@ -54,24 +58,27 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
         super(BaseModule, self).__init__()
         self._criterion = None
         self._optimizer = None
-        self._criterion_handle, self._optimizer_handle = self.setup_components(criterion, optimizer, **kwargs)
+        self._criterion_handle, self._optimizer_handle = self.setup_components(
+            criterion, optimizer, **kwargs
+        )
         kwargs = self._clean_kwargs(**kwargs)
-        if optimizer is not None and not isinstance(optimizer, str):
-            optimizer = optimizer.__class__.__name__
-        if criterion is not None and not isinstance(criterion, str):
-            criterion = criterion.__class__.__name__
 
-        self._rush_config = {
-            "optimizer": optimizer,
-            "criterion": criterion,
-            "versions": get_versions(),
-            **kwargs,
-        }
-
-        if "versions" in kwargs:
-            kwargs.pop("versions")
+        self._rush_config = self.__create_rush_config(**kwargs)
 
         self._init_model(*args, **kwargs)
+
+    def __create_rush_config(self, **kwargs) -> Dict[str, Any]:
+        cfg = {"versions": get_versions(), "model": self.__class__.__name__, **kwargs}
+        handlers = [("criterion", self._criterion_handle), ("optimizer", self._optimizer_handle)]
+        for handler, handle in handlers:
+            if handle.is_object:
+                name = handle.name_or_object.__class__.__name__
+            else:
+                name = handle.name_or_object
+
+            args = {"name": name, **handle.arguments}
+            cfg.update({handler: args})
+        return cfg
 
     def _init_model(self, *args, **kwargs):
         pass
@@ -130,8 +137,12 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
             optimizer_is_object = True
 
         return (
-            ArgumentHandler(name_or_object=criterion, arguments=criterion_args, is_object=criterion_is_object),
-            ArgumentHandler(name_or_object=optimizer, arguments=optimizer_args, is_object=optimizer_is_object),
+            ArgumentHandler(
+                name_or_object=criterion, arguments=criterion_args, is_object=criterion_is_object
+            ),
+            ArgumentHandler(
+                name_or_object=optimizer, arguments=optimizer_args, is_object=optimizer_is_object
+            ),
         )
 
     @abstractmethod
@@ -160,14 +171,22 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
         criterion_handle = self._criterion_handle
         optimizer_handle = self._optimizer_handle
         if criterion_handle.is_object:
+            if criterion_handle.name_or_object == "":
+                raise ValueError("'criterion' is not defined.")
             self._criterion = criterion_handle.name_or_object
         else:
-            self._criterion = get_criterion_by_name(criterion_handle.name_or_object, **criterion_handle.arguments)
+            self._criterion = get_criterion_by_name(
+                criterion_handle.name_or_object, **criterion_handle.arguments
+            )
         if optimizer_handle.is_object:
+            if optimizer_handle.name_or_object == "":
+                raise ValueError("'optimizer' is not defined.")
             self._optimizer = optimizer_handle.name_or_object
         else:
             optimizer_handle.arguments["params"] = self.params_to_optimize()
-            self._optimizer = get_optimizer_by_name(optimizer_handle.name_or_object, **optimizer_handle.arguments)
+            self._optimizer = get_optimizer_by_name(
+                optimizer_handle.name_or_object, **optimizer_handle.arguments
+            )
         return self.optimizer
 
     def shared_step(self, batch: Any, batch_idx: int, mode: str = "train") -> Dict[str, Any]:

@@ -18,7 +18,9 @@ TEMP_LOG_DIR = "temp_log_dir"
 class CallbackForTestingTrainer(Callback):
     losses = []
 
-    def on_train_batch_end(self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int) -> None:
+    def on_train_batch_end(
+        self, trainer: "pl.Trainer", pl_module: BaseModule, outputs, batch, batch_idx: int
+    ) -> None:
         if batch_idx % 39 == 0:
             x, y = batch
             model_out = pl_module(x)
@@ -34,7 +36,9 @@ def loss_callback():
 @pytest.fixture(scope="function")
 def rush_model():
     pl.seed_everything(42)
-    return LeNetForClassification(optimizer="SGD", criterion="CrossEntropyLoss", input_size=(28, 28, 1), lr=0.01)
+    return LeNetForClassification(
+        optimizer="SGD", criterion="CrossEntropyLoss", input_size=(28, 28, 1), lr=0.01
+    )
 
 
 @pytest.fixture(scope="function")
@@ -60,7 +64,10 @@ def test_rushmodel_logs_with_rushloggers(rush_model, loss_callback):
 
     # set trainer to rush_model
     pl_trainer = pl.Trainer(
-        enable_checkpointing=False, max_steps=200, callbacks=[loss_callback], logger=[csv_logger, tb_logger]
+        enable_checkpointing=False,
+        max_steps=200,
+        callbacks=[loss_callback],
+        logger=[csv_logger, tb_logger],
     )
     rush_model.trainer = pl_trainer
 
@@ -78,7 +85,10 @@ def test_pltrainer_trains_with_rushloggers(rush_model, data_loaders, loss_callba
 
     train_loader, val_loader = data_loaders
     pl_trainer = pl.Trainer(
-        enable_checkpointing=False, max_steps=100, callbacks=[loss_callback], logger=[csv_logger, tb_logger]
+        enable_checkpointing=False,
+        max_steps=100,
+        callbacks=[loss_callback],
+        logger=[csv_logger, tb_logger],
     )
     pl_trainer.fit(rush_model, train_loader, val_loader)
     losses = loss_callback.losses
