@@ -13,4 +13,4 @@ if __name__ == "__main__":
     # load in auto rush style
     from torchrush.module.auto import AutoRush
 
-    rushmodule = AutoRush.from_pretrained(save_dir, class_name="LeNet")
+    rushmodule = AutoRush.from_pretrained(save_dir)

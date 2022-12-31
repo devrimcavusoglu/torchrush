@@ -23,7 +23,9 @@ class HFModelForVideoClassification(BaseModule):
         loss = CrossEntropyLoss(output.logists, references)
         return loss
 
-    def save_pretrained_hf(self, save_directory: Union[str, os.PathLike], push_to_hub: bool = False, **kwargs):
+    def save_pretrained_hf(
+        self, save_directory: Union[str, os.PathLike], push_to_hub: bool = False, **kwargs
+    ):
         self.model.save_pretrained(save_directory=save_directory, push_to_hub=push_to_hub, **kwargs)
         self.processor.save_pretrained(save_directory=save_directory, push_to_hub=push_to_hub, **kwargs)
 
@@ -47,4 +49,6 @@ if __name__ == "__main__":
     # load in auto rush style
     from torchrush.module.auto import AutoRush
 
-    rushmodule = AutoRush.from_pretrained(save_dir, class_name="HFModelForVideoClassification")
+    rushmodule = AutoRush.from_pretrained(
+        save_dir,
+    )
