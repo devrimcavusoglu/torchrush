@@ -400,6 +400,9 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
         if config_file is not None:
             with open(config_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
+            # remove the keys that are not model kwargs
+            config.pop("versions", None)
+            config.pop("model", None)
             model_kwargs.update(config)
 
         return cls._from_pretrained(
