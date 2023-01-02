@@ -3,15 +3,25 @@
 </p>
 
 <h1 align="center">TorchRush</h1>
-Yet another framework built on top of PyTorch that is designed with a high speed experimental setup in the mind.
+
+Powerful torch based deep-learning framework with combination of tools from PyTorch-Lightning and HuggingFace.
+
+Yet another framework built on top of PyTorch that is designed with a high speed experimental setup in mind. It also 
+possesses the power of allowing you to build and alter the core of the building blocks of your development and/or 
+research projects. 
 
 # Installation
 
-Install with
+Install with:
 
 ```shell
-git clone git@github.com:devrimcavusoglu/torchrush-dev.git
-cd torchrush-dev
+pip install git+https://github.com/devrimcavusoglu/torchrush.git
+```
+
+or build from source:
+```shell
+git clone git@github.com:devrimcavusoglu/torchrush.git
+cd torchrush
 pip install -e .[dev]
 ```
 
@@ -42,21 +52,14 @@ trainer = pl.Trainer(max_epochs=1)
 trainer.fit(model, train_loader, val_loader)
 ```
 
-# Contributing
-
-Before opening a PR, run tests and reformat the code with:
-
-```bash
-python -m tests.run_tests -rx
-python -m tests.run_code_style format
-```
-
 # Experiment tracking
 
 Logger classes should be imported from `torchrush.loggers` and metrics should be set using `torchrush.MetricCallback`:
 
 ```python
-from torchrush.loggers import TensorboardLogger, NeptuneLogger
+import pytorch_lightning as pl
+
+from torchrush.loggers import TensorBoardLogger, NeptuneLogger
 from torchrush.metrics import MetricCallback
 
 metric_callback = MetricCallback(metrics=['accuracy', 'f1', 'precision', 'recall'])
@@ -65,9 +68,20 @@ trainer = pl.Trainer(
     max_epochs=10,
     check_val_every_n_epoch=1,
     val_check_interval=1.0,
-    logger=[TensorboardLogger(), NeptuneLogger()],
+    logger=[TensorBoardLogger(), NeptuneLogger()],
     callbacks=[metric_callback]
 )
 ```
 
 `metrics` variable in `MetricCallback` can include any [evaluate default metrics](https://huggingface.co/evaluate-metric) or custom metrics from [hf/spaces](https://huggingface.co/spaces).
+
+# Contributing
+
+This repo is developed and currently maintained by [@devrimcavusoglu](https://github.com/devrimcavusoglu) and [@fcakyon](https://github.com/fcakyon). We welcome any contribution, so do not hesitate :) 
+
+Before opening a PR, run tests and reformat the code with:
+
+```bash
+python -m tests.run_tests -rx
+python -m tests.run_code_style format
+```
