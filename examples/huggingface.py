@@ -32,7 +32,7 @@ class HFModelForVideoClassification(BaseModule):
 
 if __name__ == "__main__":
     # init rush huggingface model
-    hf_model_id = "facebook/timesformer-base-finetuned-k400"
+    hf_model_id = "MCG-NJU/videomae-base-finetuned-kinetics"
     rush_hf_model = HFModelForVideoClassification(hf_model_id=hf_model_id)
 
     # export in huggingface format
