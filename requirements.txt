@@ -6,3 +6,4 @@ torchvision==0.13.1
 torch==1.12.1
 tqdm
 evaluate>=0.3.0,<0.4.0
+huggingface_hub>=0.11.1<0.12.0
