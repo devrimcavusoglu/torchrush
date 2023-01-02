@@ -12,13 +12,13 @@ research projects.
 
 # Installation
 
-Install with
+Install with:
 
 ```shell
 pip install git+https://github.com/devrimcavusoglu/torchrush.git
 ```
 
-, or build from source
+or build from source:
 ```shell
 git clone git@github.com:devrimcavusoglu/torchrush.git
 cd torchrush
