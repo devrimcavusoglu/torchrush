@@ -40,10 +40,7 @@ def load_class(class_name: str, filepath: str):
     Returns:
         type: The class object.
     """
-    # Load the module from the file path
-    spec = importlib.util.spec_from_file_location(class_name, filepath)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    module = import_module(class_name, filepath)
 
     # Get the class from the module
     return getattr(module, class_name)

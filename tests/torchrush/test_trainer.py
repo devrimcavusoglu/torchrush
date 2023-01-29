@@ -4,6 +4,7 @@ from pytorch_lightning.callbacks import Callback
 
 from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset
+from torchrush.module.auto import AutoRush
 from torchrush.module.base import BaseModule
 from torchrush.module.lenet5 import LeNetForClassification
 
@@ -51,3 +52,14 @@ def test_trainer_trains(rush_model, data_loaders, loss_callback):
     pl_trainer.fit(rush_model, train_loader, val_loader)
     losses = loss_callback.losses
     assert list(sorted(losses, reverse=True)) == losses
+
+
+def test_autorush_for_finetuning(tmp_path, rush_model, data_loaders):
+    train_loader, val_loader = data_loaders
+    pl_trainer = pl.Trainer(enable_checkpointing=False, max_steps=200)
+    pl_trainer.fit(rush_model, train_loader, val_loader)
+    rush_model.save_pretrained(tmp_path)
+
+    # load exported custom rush model via autorush
+    model_from_checkpoint = AutoRush.from_pretrained(tmp_path.as_posix())
+    pl_trainer.fit(model_from_checkpoint, train_loader, val_loader)
