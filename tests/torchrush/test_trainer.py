@@ -1,9 +1,6 @@
 import pytest
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback
-from torch import Tensor
-from torch.nn.functional import softmax
-from torch.nn.modules.loss import _WeightedLoss
 
 from torchrush.data_loader import DataLoader
 from torchrush.dataset import GenericImageClassificationDataset

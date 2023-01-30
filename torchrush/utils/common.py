@@ -1,8 +1,8 @@
-import importlib
 import inspect
 import io
 import re
 from collections.abc import Iterable
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 from datasets import __version__ as _DATASETS_VERSION
@@ -24,8 +24,8 @@ def import_module(module_name: str, filepath: str):
     Returns:
         type: The class object.
     """
-    spec = importlib.util.spec_from_file_location(module_name, filepath)
-    module = importlib.util.module_from_spec(spec)
+    spec = spec_from_file_location(module_name, filepath)
+    module = module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 

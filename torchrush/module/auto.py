@@ -76,6 +76,7 @@ class AutoRush:
         with open(config_file, "r", encoding="utf-8") as f:
             rush_config = json.load(f)
 
+        # noinspection PyTypeChecker
         rushmodule: BaseModule = load_class(class_name=rush_config["model"], filepath=rush_file)
         return rushmodule.from_pretrained(
             pretrained_model_name_or_path=pretrained_model_name_or_path,
