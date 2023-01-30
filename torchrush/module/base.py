@@ -71,7 +71,9 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
         cfg = {"versions": get_versions(), "model": self.__class__.__name__, **kwargs}
         handlers = [("criterion", self._criterion_handle), ("optimizer", self._optimizer_handle)]
         for handler, handle in handlers:
-            if handle.is_object:
+            if handle.is_object and isinstance(handle.name_or_object, str):
+                name = None
+            elif handle.is_object:
                 name = handle.name_or_object.__class__.__name__
             else:
                 name = handle.name_or_object

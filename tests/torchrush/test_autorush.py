@@ -36,4 +36,3 @@ def test_autorush(tmp_path, model_fixture):
     assert model_from_checkpoint.fc2.out_features == model_fixture.fc2.out_features
     assert model_from_checkpoint.fc2.out_features == 79
     assert model_from_checkpoint.fc2.in_features == model_fixture.fc2.in_features
-
