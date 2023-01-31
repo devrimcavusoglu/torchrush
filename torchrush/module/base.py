@@ -71,7 +71,9 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
         cfg = {"versions": get_versions(), "model": self.__class__.__name__, **kwargs}
         handlers = [("criterion", self._criterion_handle), ("optimizer", self._optimizer_handle)]
         for handler, handle in handlers:
-            if handle.is_object:
+            if handle.is_object and isinstance(handle.name_or_object, str):
+                name = None
+            elif handle.is_object:
                 name = handle.name_or_object.__class__.__name__
             else:
                 name = handle.name_or_object
@@ -246,6 +248,17 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
         target_file_path = os.path.join(save_directory, RUSH_FILE_NAME)
         shutil.copy(subclass_file_path, target_file_path)
 
+    @staticmethod
+    def __tidy_model_args(model_kwargs: Dict[str, Any]):
+        criterion_args = model_kwargs.pop("criterion")
+        criterion_name = criterion_args.pop("name")
+
+        optimizer_args = model_kwargs.pop("optimizer")
+        optimizer_name = optimizer_args.pop("name")
+
+        model_kwargs = {**criterion_args, **optimizer_args, **model_kwargs}
+        return criterion_name, optimizer_name, model_kwargs
+
     @classmethod
     def _from_pretrained(
         cls,
@@ -286,7 +299,8 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
                 token=token,
                 local_files_only=local_files_only,
             )
-        model = cls(**model_kwargs)
+        criterion, optimizer, model_kwargs = cls.__tidy_model_args(model_kwargs)
+        model = cls(criterion=criterion, optimizer=optimizer, **model_kwargs)
 
         state_dict = torch.load(model_file, map_location=map_location)
         model.load_state_dict(state_dict, strict=strict)
