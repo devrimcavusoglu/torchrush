@@ -168,7 +168,6 @@ class BaseModule(pl.LightningModule, PyTorchModelHubMixin):
         """
         return self.parameters()
 
-    @final
     def configure_optimizers(self) -> Optional[torch.optim.Optimizer]:
         criterion_handle = self._criterion_handle
         optimizer_handle = self._optimizer_handle
